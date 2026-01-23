@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { Instance } from '../vite-env'
 import { Globe, AlertCircle } from 'lucide-vue-next'
+import AppButton from './AppButton.vue'
 
 const props = defineProps<{
   show: boolean
@@ -104,10 +105,12 @@ function save() {
 
           <!-- Footer -->
           <div class="px-6 py-4 bg-base-200/50 border-t border-base-content/10 flex justify-end gap-3">
-            <button class="btn btn-ghost" @click="emit('close')">Cancel</button>
-            <button class="btn btn-primary shadow-lg shadow-primary/20" @click="save">
-              {{ isEditing ? 'Save Changes' : 'Add Instance' }}
-            </button>
+            <AppButton variant="ghost" @click="emit('close')">Cancel</AppButton>
+            <AppButton 
+              variant="primary" 
+              @click="save"
+              :label="isEditing ? 'Save Changes' : 'Add Instance'"
+            />
           </div>
         </div>
       </div>

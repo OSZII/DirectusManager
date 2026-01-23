@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Instance } from '../vite-env'
-import { Globe, RefreshCw, ArrowUp, MoreVertical, Edit, FolderOpen, Trash2 } from 'lucide-vue-next'
+import { Globe, MoreVertical, Edit, FolderOpen, Trash2 } from 'lucide-vue-next'
+import AppButton from './AppButton.vue'
+import PushButton from './PushButton.vue'
+import PullButton from './PullButton.vue'
 
 defineProps<{
   instances: Instance[]
@@ -61,42 +64,23 @@ function handleGitPush(instance: Instance) {
               <!-- Directus Row -->
               <div class="flex items-center gap-2 bg-purple-600/20 rounded-lg px-3 py-1.5">
                 <img src="../assets/directus-logo.png" alt="Directus" class="h-5 w-5 object-contain" />
-                <button 
-                  class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
-                  :disabled="pullingId === instance.id"
+                <PullButton 
+                  :loading="pullingId === instance.id"
                   @click="handlePull(instance)"
-                >
-                  <RefreshCw 
-                    class="h-4 w-4" 
-                    :class="{ 'animate-spin': pullingId === instance.id }" 
-                  />
-                  {{ pullingId === instance.id ? 'Pulling...' : 'Pull' }}
-                </button>
-                <button 
-                  class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
+                />
+                <PushButton 
                   @click="handlePush(instance)"
-                >
-                  <ArrowUp class="h-4 w-4" />
-                  Push
-                </button>
+                />
               </div>
               <!-- Git Row -->
               <div class="flex items-center gap-2 bg-orange-600/20 rounded-lg px-3 py-1.5">
                 <img src="../assets/git-logo.png" alt="Git" class="h-5 w-5 object-contain" />
-                <button 
-                  class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
+                <PullButton 
                   @click="handleGitPull(instance)"
-                >
-                  <RefreshCw class="h-4 w-4" />
-                  Pull
-                </button>
-                <button 
-                  class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
+                />
+                <PushButton 
                   @click="handleGitPush(instance)"
-                >
-                  <ArrowUp class="h-4 w-4" />
-                  Push
-                </button>
+                />
               </div>
             </div>
             <!-- Dropdown Menu (Far Right) -->
@@ -104,19 +88,25 @@ function handleGitPush(instance: Instance) {
               <label tabindex="0" class="btn btn-ghost btn-md btn-square">
                 <MoreVertical class="h-5 w-5" />
               </label>
-              <ul tabindex="0" class="dropdown-content menu p-2 shadow-xl bg-base-200 rounded-box w-40 border border-base-content/10">
-                <li><a @click="emit('edit', instance)" class="gap-2 hover:cursor-pointer hover:bg-white/10">
-                  <Edit class="h-4 w-4" />
-                  Edit
-                </a></li>
-                <li><a @click="emit('open-folder', instance)" class="gap-2 hover:cursor-pointer hover:bg-white/10">
-                  <FolderOpen class="h-4 w-4" />
-                  Open in Folder
-                </a></li>
-                <li><a @click="emit('delete', instance.id)" class="gap-2 hover:cursor-pointer text-error hover:bg-error/20">
-                  <Trash2 class="h-4 w-4" />
-                  Delete
-                </a></li>
+              <ul tabindex="0" class="dropdown-content menu p-2 shadow-xl bg-base-200 rounded-box w-48 border border-base-content/10 z-100">
+                <li>
+                  <AppButton variant="ghost" class="w-full justify-start font-normal" @click="emit('edit', instance)">
+                    <template #icon><Edit class="h-4 w-4" /></template>
+                    Edit
+                  </AppButton>
+                </li>
+                <li>
+                  <AppButton variant="ghost" class="w-full justify-start font-normal" @click="emit('open-folder', instance)">
+                    <template #icon><FolderOpen class="h-4 w-4" /></template>
+                    Open in Folder
+                  </AppButton>
+                </li>
+                <li>
+                  <AppButton variant="ghost" class="w-full justify-start font-normal text-error hover:bg-error/20" @click="emit('delete', instance.id)">
+                    <template #icon><Trash2 class="h-4 w-4" /></template>
+                    Delete
+                  </AppButton>
+                </li>
               </ul>
             </div>
           </div>

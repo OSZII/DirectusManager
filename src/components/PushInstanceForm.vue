@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { Instance } from '../vite-env'
 import { ArrowRight, Search, Upload } from 'lucide-vue-next'
+import AppButton from './AppButton.vue'
 
 const props = defineProps<{
   show: boolean
@@ -150,15 +151,14 @@ async function handleConfirm() {
 
           <!-- Footer -->
           <div class="px-8 py-5 bg-base-200/50 border-t border-base-content/10 flex justify-end gap-4">
-            <button class="btn btn-ghost btn-lg" @click="emit('close')" :disabled="isPushing">Cancel</button>
-            <button 
-              class="btn btn-primary btn-lg shadow-lg shadow-primary/20" 
+            <AppButton variant="ghost" @click="emit('close')" :disabled="isPushing">Cancel</AppButton>
+            <AppButton 
+              variant="primary" 
               @click="handleConfirm"
               :disabled="!selectedInstanceId || isPushing"
-            >
-              <span v-if="isPushing" class="loading loading-spinner loading-sm"></span>
-              {{ isPushing ? 'Pushing...' : 'Confirm Push' }}
-            </button>
+              :loading="isPushing"
+              :label="isPushing ? 'Pushing...' : 'Confirm Push'"
+            />
           </div>
         </div>
       </div>

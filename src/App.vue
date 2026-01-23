@@ -5,6 +5,7 @@ import AddInstanceForm from './components/AddInstanceForm.vue'
 import PushInstanceForm from './components/PushInstanceForm.vue'
 import { Instance } from './vite-env'
 import { Server, Plus, Database } from 'lucide-vue-next'
+import AppButton from './components/AppButton.vue'
 
 const instances = ref<Instance[]>([])
 const showModal = ref(false)
@@ -99,22 +100,30 @@ async function handlePush(sourceId: string, targetId: string) {
   <div class="h-screen flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300" data-theme="night">
     <!-- Header -->
     <header class="navbar bg-base-100/80 backdrop-blur-lg border-b border-base-content/10 shadow-lg">
-      <div class="flex-1 gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
-          <Server class="h-6 w-6 text-primary-content" />
+      <div class="flex justify-between w-full max-w-5xl mx-auto">
+        <div class="flex flex-1 gap-3 ">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+            <Server class="h-6 w-6 text-primary-content" />
+            <img src="/src/assets/directus-logo.png" />
+          </div>
+          <div>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Directus Manager
+            </h1>
+            <p class="text-xs text-base-content/60">Manage your Directus instances</p>
+          </div>
         </div>
-        <div>
-          <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Directus Manager
-          </h1>
-          <p class="text-xs text-base-content/60">Manage your Directus instances</p>
+        <div class="flex items-center">
+          <AppButton 
+            variant="primary" 
+            size="sm" 
+            class="shadow-lg shadow-primary/20 hover:shadow-primary/40" 
+            @click="openAddModal"
+          >
+            <template #icon><Plus class="h-4 w-4" /></template>
+            Add Instance
+          </AppButton>
         </div>
-      </div>
-      <div class="flex-none">
-        <button class="btn btn-primary btn-sm gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all" @click="openAddModal">
-          <Plus class="h-4 w-4" />
-          Add Instance
-        </button>
       </div>
     </header>
 
@@ -128,10 +137,10 @@ async function handlePush(sourceId: string, targetId: string) {
           </div>
           <h2 class="text-2xl font-bold mb-2">No Instances Yet</h2>
           <p class="text-base-content/60 mb-6 text-center max-w-md">Add your first Directus instance to start managing and syncing your content.</p>
-          <button class="btn btn-primary gap-2" @click="openAddModal">
-            <Plus class="h-5 w-5" />
+          <AppButton variant="primary" @click="openAddModal">
+            <template #icon><Plus class="h-5 w-5" /></template>
             Add Your First Instance
-          </button>
+          </AppButton>
         </div>
 
         <!-- Instance List -->
