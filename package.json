@@ -12,6 +12,7 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "directus-sync": "^3.4.1",
+    "lucide-vue-next": "^0.563.0",
     "simple-git": "^3.30.0",
     "vue": "^3.4.21"
   },

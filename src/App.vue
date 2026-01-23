@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import InstanceList from './components/InstanceList.vue'
 import InstanceForm from './components/InstanceForm.vue'
 import { Instance } from './vite-env'
+import { Server, Plus, Database } from 'lucide-vue-next'
 
 const instances = ref<Instance[]>([])
 const showModal = ref(false)
@@ -75,9 +76,7 @@ async function handleOpenFolder(instance: Instance) {
     <header class="navbar bg-base-100/80 backdrop-blur-lg border-b border-base-content/10 shadow-lg">
       <div class="flex-1 gap-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-content" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-          </svg>
+          <Server class="h-6 w-6 text-primary-content" />
         </div>
         <div>
           <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -88,9 +87,7 @@ async function handleOpenFolder(instance: Instance) {
       </div>
       <div class="flex-none">
         <button class="btn btn-primary btn-sm gap-2 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all" @click="openAddModal">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+          <Plus class="h-4 w-4" />
           Add Instance
         </button>
       </div>
@@ -102,16 +99,12 @@ async function handleOpenFolder(instance: Instance) {
         <!-- Empty State -->
         <div v-if="instances.length === 0" class="flex flex-col items-center justify-center py-20">
           <div class="w-24 h-24 rounded-full bg-base-100 flex items-center justify-center mb-6 shadow-xl">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" />
-            </svg>
+            <Database class="h-12 w-12 text-base-content/30" />
           </div>
           <h2 class="text-2xl font-bold mb-2">No Instances Yet</h2>
           <p class="text-base-content/60 mb-6 text-center max-w-md">Add your first Directus instance to start managing and syncing your content.</p>
           <button class="btn btn-primary gap-2" @click="openAddModal">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus class="h-5 w-5" />
             Add Your First Instance
           </button>
         </div>

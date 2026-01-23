@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Instance } from '../vite-env'
+import { Globe, RefreshCw, ArrowUp, MoreVertical, Edit, FolderOpen, Trash2 } from 'lucide-vue-next'
 
 defineProps<{
   instances: Instance[]
@@ -44,9 +45,7 @@ function handleGitPush(instance: Instance) {
           <div class="flex items-center gap-4 min-w-0">
             <!-- Icon -->
             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center flex-shrink-0 group-hover:from-primary/30 group-hover:to-secondary/30 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-              </svg>
+              <Globe class="h-6 w-6 text-primary" />
             </div>
             <!-- Info -->
             <div class="min-w-0">
@@ -66,31 +65,17 @@ function handleGitPush(instance: Instance) {
                   :disabled="pullingId === instance.id"
                   @click="handlePull(instance)"
                 >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
+                  <RefreshCw 
                     class="h-4 w-4" 
                     :class="{ 'animate-spin': pullingId === instance.id }" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  />
                   {{ pullingId === instance.id ? 'Pulling...' : 'Pull' }}
                 </button>
                 <button 
                   class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
                   @click="handlePush(instance)"
                 >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    class="h-4 w-4" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
+                  <ArrowUp class="h-4 w-4" />
                   Push
                 </button>
               </div>
@@ -101,30 +86,14 @@ function handleGitPush(instance: Instance) {
                   class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
                   @click="handleGitPull(instance)"
                 >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    class="h-4 w-4" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  <RefreshCw class="h-4 w-4" />
                   Pull
                 </button>
                 <button 
                   class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
                   @click="handleGitPush(instance)"
                 >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    class="h-4 w-4" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
+                  <ArrowUp class="h-4 w-4" />
                   Push
                 </button>
               </div>
@@ -132,27 +101,19 @@ function handleGitPush(instance: Instance) {
             <!-- Dropdown Menu (Far Right) -->
             <div class="dropdown dropdown-end">
               <label tabindex="0" class="btn btn-ghost btn-md btn-square">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
+                <MoreVertical class="h-5 w-5" />
               </label>
               <ul tabindex="0" class="dropdown-content menu p-2 shadow-xl bg-base-200 rounded-box w-40 border border-base-content/10">
                 <li><a @click="emit('edit', instance)" class="gap-2 hover:cursor-pointer hover:bg-white/10">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
+                  <Edit class="h-4 w-4" />
                   Edit
                 </a></li>
                 <li><a @click="emit('open-folder', instance)" class="gap-2 hover:cursor-pointer hover:bg-white/10">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-                  </svg>
+                  <FolderOpen class="h-4 w-4" />
                   Open in Folder
                 </a></li>
                 <li><a @click="emit('delete', instance.id)" class="gap-2 hover:cursor-pointer text-error hover:bg-error/20">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  <Trash2 class="h-4 w-4" />
                   Delete
                 </a></li>
               </ul>
