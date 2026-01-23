@@ -21,6 +21,18 @@ function handlePull(instance: Instance) {
     pullingId.value = null
   })
 }
+
+function handlePush(instance: Instance) {
+  alert(`Push instance "${instance.name}" not implemented`)
+}
+
+function handleGitPull(instance: Instance) {
+  alert(`Git pull for "${instance.name}" not implemented`)
+}
+
+function handleGitPush(instance: Instance) {
+  alert(`Git push for "${instance.name}" not implemented`)
+}
 </script>
 
 <template>
@@ -42,25 +54,82 @@ function handlePull(instance: Instance) {
               <p class="text-sm text-base-content/60 truncate">{{ instance.url }}</p>
             </div>
           </div>
-          <!-- Actions -->
-          <div class="h-full flex items-center justify-stretch gap-2">
-            <button 
-              class="btn btn-primary btn-sm gap-1.5 transition-all" 
-              :disabled="pullingId === instance.id"
-              @click="handlePull(instance)"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                class="h-4 w-4" 
-                :class="{ 'animate-spin': pullingId === instance.id }" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {{ pullingId === instance.id ? 'Pulling...' : 'Pull' }}
-            </button>
+          <!-- Actions Container -->
+          <div class="flex items-center gap-3">
+            <!-- Button Rows -->
+            <div class="flex flex-col gap-2">
+              <!-- Directus Row -->
+              <div class="flex items-center gap-2 bg-purple-600/20 rounded-lg px-3 py-1.5">
+                <img src="../assets/directus-logo.png" alt="Directus" class="h-5 w-5 object-contain" />
+                <button 
+                  class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
+                  :disabled="pullingId === instance.id"
+                  @click="handlePull(instance)"
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    class="h-4 w-4" 
+                    :class="{ 'animate-spin': pullingId === instance.id }" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {{ pullingId === instance.id ? 'Pulling...' : 'Pull' }}
+                </button>
+                <button 
+                  class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
+                  @click="handlePush(instance)"
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    class="h-4 w-4" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  Push
+                </button>
+              </div>
+              <!-- Git Row -->
+              <div class="flex items-center gap-2 bg-orange-600/20 rounded-lg px-3 py-1.5">
+                <img src="../assets/git-logo.png" alt="Git" class="h-5 w-5 object-contain" />
+                <button 
+                  class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
+                  @click="handleGitPull(instance)"
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    class="h-4 w-4" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Pull
+                </button>
+                <button 
+                  class="btn btn-sm gap-1.5 transition-all bg-base-100 hover:bg-base-100/60 hover:shadow-md border-0 text-base-content" 
+                  @click="handleGitPush(instance)"
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    class="h-4 w-4" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  Push
+                </button>
+              </div>
+            </div>
+            <!-- Dropdown Menu (Far Right) -->
             <div class="dropdown dropdown-end">
               <label tabindex="0" class="btn btn-ghost btn-md btn-square">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
