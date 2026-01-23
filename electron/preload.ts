@@ -19,6 +19,11 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     return ipcRenderer.invoke(channel, ...omit)
   },
 
-  // You can expose other APTs you need here.
-  // ...
+  // Instance Management API
+  getInstances: () => ipcRenderer.invoke('get-instances'),
+  saveInstance: (instance: any) => ipcRenderer.invoke('save-instance', instance),
+  deleteInstance: (id: string) => ipcRenderer.invoke('delete-instance', id),
+  pullInstance: (id: string) => ipcRenderer.invoke('pull-instance', id),
+  pushInstance: (sourceId: string, destId: string) => ipcRenderer.invoke('push-instance', sourceId, destId),
+  openFolder: (id: string) => ipcRenderer.invoke('open-folder', id),
 })

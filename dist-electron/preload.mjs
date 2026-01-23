@@ -16,7 +16,12 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   invoke(...args) {
     const [channel, ...omit] = args;
     return electron.ipcRenderer.invoke(channel, ...omit);
-  }
-  // You can expose other APTs you need here.
-  // ...
+  },
+  // Instance Management API
+  getInstances: () => electron.ipcRenderer.invoke("get-instances"),
+  saveInstance: (instance) => electron.ipcRenderer.invoke("save-instance", instance),
+  deleteInstance: (id) => electron.ipcRenderer.invoke("delete-instance", id),
+  pullInstance: (id) => electron.ipcRenderer.invoke("pull-instance", id),
+  pushInstance: (sourceId, destId) => electron.ipcRenderer.invoke("push-instance", sourceId, destId),
+  openFolder: (id) => electron.ipcRenderer.invoke("open-folder", id)
 });
