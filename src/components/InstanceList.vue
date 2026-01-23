@@ -11,6 +11,7 @@ const emit = defineEmits<{
   (e: 'edit', instance: Instance): void
   (e: 'delete', id: string): void
   (e: 'pull', instance: Instance, callback: (success: boolean) => void): void
+  (e: 'push', instance: Instance): void
   (e: 'open-folder', instance: Instance): void
 }>()
 
@@ -24,7 +25,7 @@ function handlePull(instance: Instance) {
 }
 
 function handlePush(instance: Instance) {
-  alert(`Push instance "${instance.name}" not implemented`)
+  emit('push', instance)
 }
 
 function handleGitPull(instance: Instance) {

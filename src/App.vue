@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import InstanceList from './components/InstanceList.vue'
-import InstanceForm from './components/InstanceForm.vue'
+import AddInstanceForm from './components/AddInstanceForm.vue'
+import PushInstanceForm from './components/PushInstanceForm.vue'
 import { Instance } from './vite-env'
 import { Server, Plus, Database } from 'lucide-vue-next'
 
 const instances = ref<Instance[]>([])
 const showModal = ref(false)
 const editingInstance = ref<Instance | null>(null)
+const showPushModal = ref(false)
+const pushTargetInstance = ref<Instance | null>(null)
 
 async function loadInstances() {
   instances.value = await window.ipcRenderer.getInstances()
@@ -68,6 +71,28 @@ async function handleOpenFolder(instance: Instance) {
     console.error('[open-folder] error', err.message);
   }
 }
+
+function openPushModal(instance: Instance) {
+  pushTargetInstance.value = instance
+  showPushModal.value = true
+}
+
+async function handlePush(sourceId: string, targetId: string) {
+  try {
+    const result = await window.ipcRenderer.pushInstance(sourceId, targetId);
+    showPushModal.value = false;
+    if (result.success) {
+      alert(`✅ Push successful to ${pushTargetInstance.value?.name}!`);
+    } else {
+      alert(`⚠️ Push completed but may have issues.`);
+    }
+    console.log('[push] success', result.output);
+  } catch (err: any) {
+    showPushModal.value = false;
+    alert(`❌ Push failed: ${err.message}`);
+    console.error('[push] error', err.message);
+  }
+}
 </script>
 
 <template>
@@ -116,6 +141,7 @@ async function handleOpenFolder(instance: Instance) {
           @edit="openEditModal" 
           @delete="handleDelete" 
           @pull="handlePull"
+          @push="openPushModal"
           @open-folder="handleOpenFolder"
         />
       </div>
@@ -126,12 +152,21 @@ async function handleOpenFolder(instance: Instance) {
       <p class="text-xs text-base-content/40">Directus Manager v0.1.0 • Built with Electron + Vue</p>
     </footer>
 
-    <!-- Modal -->
-    <InstanceForm 
+    <!-- Add/Edit Modal -->
+    <AddInstanceForm 
       :show="showModal" 
       :editingInstance="editingInstance" 
       @close="showModal = false" 
       @save="handleSave" 
+    />
+
+    <!-- Push Modal -->
+    <PushInstanceForm
+      :show="showPushModal"
+      :targetInstance="pushTargetInstance"
+      :instances="instances"
+      @close="showPushModal = false"
+      @confirm="handlePush"
     />
   </div>
 </template>
