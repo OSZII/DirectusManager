@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Instance } from '../vite-env'
-import { Globe, MoreVertical, Edit, FolderOpen, Trash2 } from 'lucide-vue-next'
+import { ref, onMounted, watch } from 'vue'
+import { Instance, GitStatus } from '../vite-env'
+import { Globe, MoreVertical, Edit, FolderOpen, Trash2, GitBranch, Link } from 'lucide-vue-next'
 import AppButton from './AppButton.vue'
 import PushButton from './PushButton.vue'
 import PullButton from './PullButton.vue'
 
-defineProps<{
+const props = defineProps<{
   instances: Instance[]
 }>()
 
@@ -16,9 +16,36 @@ const emit = defineEmits<{
   (e: 'pull', instance: Instance, callback: (success: boolean) => void): void
   (e: 'push', instance: Instance): void
   (e: 'open-folder', instance: Instance): void
+  (e: 'git-init', instance: Instance): void
+  (e: 'git-connect-remote', instance: Instance): void
+  (e: 'git-pull', instance: Instance, callback: (success: boolean) => void): void
+  (e: 'git-push', instance: Instance, callback: (success: boolean) => void): void
 }>()
 
 const pullingId = ref<string | null>(null)
+const gitPullingId = ref<string | null>(null)
+const gitPushingId = ref<string | null>(null)
+const gitInitializingId = ref<string | null>(null)
+
+// Store git status for each instance
+const gitStatuses = ref<Record<string, GitStatus>>({})
+
+// Fetch git status for all instances
+async function fetchGitStatuses() {
+  for (const instance of props.instances) {
+    try {
+      const status = await window.ipcRenderer.gitStatus(instance.id)
+      gitStatuses.value[instance.id] = status
+    } catch (e) {
+      console.error(`Failed to get git status for ${instance.name}:`, e)
+      gitStatuses.value[instance.id] = { initialized: false, hasRemote: false, changesCount: 0 }
+    }
+  }
+}
+
+// Refresh statuses on mount and when instances change
+onMounted(fetchGitStatuses)
+watch(() => props.instances, fetchGitStatuses, { deep: true })
 
 function handlePull(instance: Instance) {
   pullingId.value = instance.id
@@ -31,13 +58,49 @@ function handlePush(instance: Instance) {
   emit('push', instance)
 }
 
+async function handleGitInit(instance: Instance) {
+  gitInitializingId.value = instance.id
+  emit('git-init', instance)
+  // Refresh status after a short delay
+  setTimeout(async () => {
+    try {
+      const status = await window.ipcRenderer.gitStatus(instance.id)
+      gitStatuses.value[instance.id] = status
+    } catch (e) {
+      console.error('Failed to refresh git status:', e)
+    }
+    gitInitializingId.value = null
+  }, 500)
+}
+
+function handleGitConnectRemote(instance: Instance) {
+  emit('git-connect-remote', instance)
+}
+
 function handleGitPull(instance: Instance) {
-  alert(`Git pull for "${instance.name}" not implemented`)
+  gitPullingId.value = instance.id
+  emit('git-pull', instance, (_success: boolean) => {
+    gitPullingId.value = null
+    // Refresh status
+    window.ipcRenderer.gitStatus(instance.id).then(status => {
+      gitStatuses.value[instance.id] = status
+    })
+  })
 }
 
 function handleGitPush(instance: Instance) {
-  alert(`Git push for "${instance.name}" not implemented`)
+  gitPushingId.value = instance.id
+  emit('git-push', instance, (_success: boolean) => {
+    gitPushingId.value = null
+    // Refresh status
+    window.ipcRenderer.gitStatus(instance.id).then(status => {
+      gitStatuses.value[instance.id] = status
+    })
+  })
 }
+
+// Expose refresh function for parent to call after remote setup
+defineExpose({ fetchGitStatuses })
 </script>
 
 <template>
@@ -75,12 +138,51 @@ function handleGitPush(instance: Instance) {
               <!-- Git Row -->
               <div class="flex items-center gap-2 bg-orange-600/20 rounded-lg px-3 py-1.5">
                 <img src="../assets/git-logo.png" alt="Git" class="h-5 w-5 object-contain" />
-                <PullButton 
-                  @click="handleGitPull(instance)"
-                />
-                <PushButton 
-                  @click="handleGitPush(instance)"
-                />
+                
+                <!-- State: Not initialized -->
+                <template v-if="!gitStatuses[instance.id]?.initialized">
+                  <AppButton 
+                    variant="ghost" 
+                    size="sm"
+                    :loading="gitInitializingId === instance.id"
+                    @click="handleGitInit(instance)"
+                  >
+                    <template #icon><GitBranch class="h-4 w-4" /></template>
+                    Init Git
+                  </AppButton>
+                </template>
+                
+                <!-- State: Initialized but no remote -->
+                <template v-else-if="!gitStatuses[instance.id]?.hasRemote">
+                  <AppButton 
+                    variant="ghost" 
+                    size="sm"
+                    @click="handleGitConnectRemote(instance)"
+                  >
+                    <template #icon><Link class="h-4 w-4" /></template>
+                    Connect Remote
+                  </AppButton>
+                </template>
+                
+                <!-- State: Fully configured - show push/pull -->
+                <template v-else>
+                  <PullButton 
+                    :loading="gitPullingId === instance.id"
+                    @click="handleGitPull(instance)"
+                  />
+                  <PushButton 
+                    :loading="gitPushingId === instance.id"
+                    @click="handleGitPush(instance)"
+                  />
+                  <!-- Show changes count badge if there are changes -->
+                  <span 
+                    v-if="gitStatuses[instance.id]?.changesCount > 0" 
+                    class="badge badge-warning badge-sm"
+                    :title="`${gitStatuses[instance.id].changesCount} uncommitted changes`"
+                  >
+                    {{ gitStatuses[instance.id].changesCount }}
+                  </span>
+                </template>
               </div>
             </div>
             <!-- Dropdown Menu (Far Right) -->

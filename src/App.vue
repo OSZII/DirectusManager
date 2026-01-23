@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import InstanceList from './components/InstanceList.vue'
 import AddInstanceForm from './components/AddInstanceForm.vue'
 import PushInstanceForm from './components/PushInstanceForm.vue'
+import GitRemoteForm from './components/GitRemoteForm.vue'
 import { Instance } from './vite-env'
 import { Server, Plus, Database } from 'lucide-vue-next'
 import AppButton from './components/AppButton.vue'
@@ -12,6 +13,13 @@ const showModal = ref(false)
 const editingInstance = ref<Instance | null>(null)
 const showPushModal = ref(false)
 const pushTargetInstance = ref<Instance | null>(null)
+
+// Git Remote Modal
+const showGitRemoteModal = ref(false)
+const gitRemoteTargetInstance = ref<Instance | null>(null)
+
+// Reference to InstanceList for refreshing git statuses
+const instanceListRef = ref<InstanceType<typeof InstanceList> | null>(null)
 
 async function loadInstances() {
   instances.value = await window.ipcRenderer.getInstances()
@@ -94,6 +102,66 @@ async function handlePush(sourceId: string, targetId: string) {
     console.error('[push] error', err.message);
   }
 }
+
+// ========== GIT HANDLERS ==========
+
+async function handleGitInit(instance: Instance) {
+  try {
+    await window.ipcRenderer.gitInit(instance.id);
+    alert(`✅ Git initialized for ${instance.name}!`);
+  } catch (err: any) {
+    alert(`❌ Failed to initialize Git: ${err.message}`);
+    console.error('[git-init] error', err.message);
+  }
+}
+
+function handleGitConnectRemote(instance: Instance) {
+  gitRemoteTargetInstance.value = instance
+  showGitRemoteModal.value = true
+}
+
+async function handleGitRemoteSave(instanceId: string, remoteUrl: string, token: string) {
+  try {
+    await window.ipcRenderer.gitSetRemote(instanceId, remoteUrl, token);
+    showGitRemoteModal.value = false;
+    alert(`✅ Git remote configured successfully!`);
+    // Refresh git statuses in InstanceList
+    instanceListRef.value?.fetchGitStatuses();
+  } catch (err: any) {
+    alert(`❌ Failed to configure Git remote: ${err.message}`);
+    console.error('[git-set-remote] error', err.message);
+  }
+}
+
+async function handleGitPull(instance: Instance, callback: (success: boolean) => void) {
+  try {
+    const result = await window.ipcRenderer.gitPull(instance.id);
+    if (result.success) {
+      alert(`✅ Git pull successful for ${instance.name}!`);
+    }
+    console.log('[git-pull] success', result.output);
+    callback(result.success);
+  } catch (err: any) {
+    alert(`❌ Git pull failed: ${err.message}`);
+    console.error('[git-pull] error', err.message);
+    callback(false);
+  }
+}
+
+async function handleGitPush(instance: Instance, callback: (success: boolean) => void) {
+  try {
+    const result = await window.ipcRenderer.gitPush(instance.id);
+    if (result.success) {
+      alert(`✅ Git push successful for ${instance.name}!`);
+    }
+    console.log('[git-push] success', result.output);
+    callback(result.success);
+  } catch (err: any) {
+    alert(`❌ Git push failed: ${err.message}`);
+    console.error('[git-push] error', err.message);
+    callback(false);
+  }
+}
 </script>
 
 <template>
@@ -146,12 +214,17 @@ async function handlePush(sourceId: string, targetId: string) {
         <!-- Instance List -->
         <InstanceList 
           v-else
+          ref="instanceListRef"
           :instances="instances" 
           @edit="openEditModal" 
           @delete="handleDelete" 
           @pull="handlePull"
           @push="openPushModal"
           @open-folder="handleOpenFolder"
+          @git-init="handleGitInit"
+          @git-connect-remote="handleGitConnectRemote"
+          @git-pull="handleGitPull"
+          @git-push="handleGitPush"
         />
       </div>
     </main>
@@ -176,6 +249,14 @@ async function handlePush(sourceId: string, targetId: string) {
       :instances="instances"
       @close="showPushModal = false"
       @confirm="handlePush"
+    />
+
+    <!-- Git Remote Modal -->
+    <GitRemoteForm
+      :show="showGitRemoteModal"
+      :instance="gitRemoteTargetInstance"
+      @close="showGitRemoteModal = false"
+      @save="handleGitRemoteSave"
     />
   </div>
 </template>

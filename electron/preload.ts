@@ -26,4 +26,11 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   pullInstance: (id: string) => ipcRenderer.invoke('pull-instance', id),
   pushInstance: (sourceId: string, destId: string) => ipcRenderer.invoke('push-instance', sourceId, destId),
   openFolder: (id: string) => ipcRenderer.invoke('open-folder', id),
+
+  // Git API
+  gitStatus: (id: string) => ipcRenderer.invoke('git-status', id),
+  gitInit: (id: string) => ipcRenderer.invoke('git-init', id),
+  gitSetRemote: (id: string, remoteUrl: string, token: string) => ipcRenderer.invoke('git-set-remote', id, remoteUrl, token),
+  gitPull: (id: string) => ipcRenderer.invoke('git-pull', id),
+  gitPush: (id: string, commitMessage?: string) => ipcRenderer.invoke('git-push', id, commitMessage),
 })

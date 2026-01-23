@@ -6,6 +6,18 @@ export interface Instance {
     url: string;
     token?: string; // Only present in Main or decrypted in Renderer
     encryptedToken?: string;
+    // Git fields
+    gitRemoteUrl?: string;
+    encryptedGitToken?: string;
+    gitToken?: string; // Fallback if encryption unavailable
+}
+
+export interface GitStatus {
+    initialized: boolean;
+    hasRemote: boolean;
+    remoteUrl?: string;
+    currentBranch?: string;
+    changesCount: number;
 }
 
 export interface IpcRendererApi {
@@ -14,12 +26,20 @@ export interface IpcRendererApi {
     send: (channel: string, ...omit: any[]) => void;
     invoke: (channel: string, ...omit: any[]) => Promise<any>;
 
+    // Instance Management
     getInstances: () => Promise<Instance[]>;
     saveInstance: (instance: Partial<Instance>) => Promise<boolean>;
     deleteInstance: (id: string) => Promise<boolean>;
     pullInstance: (id: string) => Promise<{ success: boolean; output: string }>;
     pushInstance: (sourceId: string, destId: string) => Promise<{ success: boolean; output: string }>;
     openFolder: (id: string) => Promise<boolean>;
+
+    // Git Operations
+    gitStatus: (id: string) => Promise<GitStatus>;
+    gitInit: (id: string) => Promise<{ success: boolean }>;
+    gitSetRemote: (id: string, remoteUrl: string, token: string) => Promise<{ success: boolean }>;
+    gitPull: (id: string) => Promise<{ success: boolean; output: string }>;
+    gitPush: (id: string, commitMessage?: string) => Promise<{ success: boolean; output: string }>;
 }
 
 declare global {
@@ -27,3 +47,4 @@ declare global {
         ipcRenderer: IpcRendererApi
     }
 }
+

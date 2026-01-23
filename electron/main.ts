@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, safeStorage, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
+import simpleGit, { SimpleGit } from 'simple-git'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -196,6 +197,208 @@ function registerIpcHandlers() {
 
     await shell.openPath(instanceDir);
     return true;
+  });
+
+  // ========== GIT HANDLERS ==========
+
+  // Helper to get git instance for a directory
+  function getGitForInstance(instanceName: string): SimpleGit {
+    const instanceDir = getInstanceDir(instanceName);
+    if (!fs.existsSync(instanceDir)) {
+      fs.mkdirSync(instanceDir, { recursive: true });
+    }
+    return simpleGit(instanceDir);
+  }
+
+  // Helper to decrypt git token from instance
+  function decryptGitToken(instance: any): string {
+    if (instance.encryptedGitToken && safeStorage.isEncryptionAvailable()) {
+      return safeStorage.decryptString(Buffer.from(instance.encryptedGitToken, 'base64'));
+    }
+    return instance.gitToken || '';
+  }
+
+  // Helper to build authenticated remote URL
+  function buildAuthUrl(remoteUrl: string, token: string): string {
+    if (!token) return remoteUrl;
+    // Convert https://github.com/user/repo.git to https://token@github.com/user/repo.git
+    const url = new URL(remoteUrl);
+    url.username = token;
+    return url.toString();
+  }
+
+  // Get git status for an instance
+  ipcMain.handle('git-status', async (_event, instanceId: string) => {
+    const instances = loadConfig();
+    const instance = instances.find((i: any) => i.id === instanceId);
+    if (!instance) throw new Error('Instance not found');
+
+    const instanceDir = getInstanceDir(instance.name);
+
+    // Check if directory exists
+    if (!fs.existsSync(instanceDir)) {
+      return { initialized: false, hasRemote: false, changesCount: 0 };
+    }
+
+    // Check if .git folder exists
+    const gitDir = path.join(instanceDir, '.git');
+    if (!fs.existsSync(gitDir)) {
+      return { initialized: false, hasRemote: false, changesCount: 0 };
+    }
+
+    const git = simpleGit(instanceDir);
+
+    try {
+      // Get remotes
+      const remotes = await git.getRemotes(true);
+      const origin = remotes.find(r => r.name === 'origin');
+
+      // Get status for changes count
+      const status = await git.status();
+      const changesCount = status.files.length;
+
+      // Get current branch
+      const branchSummary = await git.branch();
+
+      return {
+        initialized: true,
+        hasRemote: !!origin,
+        remoteUrl: origin?.refs?.fetch || instance.gitRemoteUrl || '',
+        currentBranch: branchSummary.current || 'main',
+        changesCount
+      };
+    } catch (e) {
+      console.error('Git status error:', e);
+      return { initialized: false, hasRemote: false, changesCount: 0 };
+    }
+  });
+
+  // Initialize git repo in instance folder
+  ipcMain.handle('git-init', async (_event, instanceId: string) => {
+    const instances = loadConfig();
+    const instance = instances.find((i: any) => i.id === instanceId);
+    if (!instance) throw new Error('Instance not found');
+
+    const git = getGitForInstance(instance.name);
+
+    await git.init();
+
+    // Create initial commit if no commits exist
+    try {
+      await git.log();
+    } catch {
+      // No commits yet, create initial commit
+      const instanceDir = getInstanceDir(instance.name);
+      const gitignorePath = path.join(instanceDir, '.gitignore');
+      if (!fs.existsSync(gitignorePath)) {
+        fs.writeFileSync(gitignorePath, 'node_modules/\n.DS_Store\n');
+      }
+      await git.add('.gitignore');
+      await git.commit('Initial commit');
+    }
+
+    return { success: true };
+  });
+
+  // Set remote origin with token
+  ipcMain.handle('git-set-remote', async (_event, instanceId: string, remoteUrl: string, token: string) => {
+    const instances = loadConfig();
+    const instanceIndex = instances.findIndex((i: any) => i.id === instanceId);
+    if (instanceIndex < 0) throw new Error('Instance not found');
+
+    const instance = instances[instanceIndex];
+    const git = getGitForInstance(instance.name);
+
+    // Encrypt and save token
+    if (token && safeStorage.isEncryptionAvailable()) {
+      instance.encryptedGitToken = safeStorage.encryptString(token).toString('base64');
+    } else if (token) {
+      instance.gitToken = token; // Fallback if encryption unavailable
+    }
+    instance.gitRemoteUrl = remoteUrl;
+
+    // Save to config
+    instances[instanceIndex] = instance;
+    saveConfig(instances);
+
+    // Build authenticated URL
+    const authUrl = buildAuthUrl(remoteUrl, token);
+
+    // Check if origin exists and update/add
+    const remotes = await git.getRemotes();
+    if (remotes.find(r => r.name === 'origin')) {
+      await git.remote(['set-url', 'origin', authUrl]);
+    } else {
+      await git.addRemote('origin', authUrl);
+    }
+
+    return { success: true };
+  });
+
+  // Git pull
+  ipcMain.handle('git-pull', async (_event, instanceId: string) => {
+    const instances = loadConfig();
+    const instance = instances.find((i: any) => i.id === instanceId);
+    if (!instance) throw new Error('Instance not found');
+
+    const git = getGitForInstance(instance.name);
+
+    // Update remote URL with token for authentication
+    const token = decryptGitToken(instance);
+    if (instance.gitRemoteUrl && token) {
+      const authUrl = buildAuthUrl(instance.gitRemoteUrl, token);
+      await git.remote(['set-url', 'origin', authUrl]);
+    }
+
+    try {
+      // Get current branch
+      const branchSummary = await git.branch();
+      const currentBranch = branchSummary.current || 'main';
+
+      const result = await git.pull('origin', currentBranch);
+      return { success: true, output: JSON.stringify(result) };
+    } catch (e: any) {
+      throw new Error(e.message || 'Git pull failed');
+    }
+  });
+
+  // Git push (stage all, commit, push)
+  ipcMain.handle('git-push', async (_event, instanceId: string, commitMessage?: string) => {
+    const instances = loadConfig();
+    const instance = instances.find((i: any) => i.id === instanceId);
+    if (!instance) throw new Error('Instance not found');
+
+    const git = getGitForInstance(instance.name);
+
+    // Update remote URL with token for authentication
+    const token = decryptGitToken(instance);
+    if (instance.gitRemoteUrl && token) {
+      const authUrl = buildAuthUrl(instance.gitRemoteUrl, token);
+      await git.remote(['set-url', 'origin', authUrl]);
+    }
+
+    try {
+      // Stage all changes
+      await git.add('.');
+
+      // Check if there are changes to commit
+      const status = await git.status();
+      if (status.files.length > 0) {
+        const message = commitMessage || `Update: ${new Date().toISOString()}`;
+        await git.commit(message);
+      }
+
+      // Get current branch
+      const branchSummary = await git.branch();
+      const currentBranch = branchSummary.current || 'main';
+
+      // Push with upstream tracking
+      await git.push('origin', currentBranch, ['--set-upstream']);
+
+      return { success: true, output: 'Push completed successfully' };
+    } catch (e: any) {
+      throw new Error(e.message || 'Git push failed');
+    }
   });
 }
 

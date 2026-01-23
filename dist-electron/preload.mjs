@@ -23,5 +23,11 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   deleteInstance: (id) => electron.ipcRenderer.invoke("delete-instance", id),
   pullInstance: (id) => electron.ipcRenderer.invoke("pull-instance", id),
   pushInstance: (sourceId, destId) => electron.ipcRenderer.invoke("push-instance", sourceId, destId),
-  openFolder: (id) => electron.ipcRenderer.invoke("open-folder", id)
+  openFolder: (id) => electron.ipcRenderer.invoke("open-folder", id),
+  // Git API
+  gitStatus: (id) => electron.ipcRenderer.invoke("git-status", id),
+  gitInit: (id) => electron.ipcRenderer.invoke("git-init", id),
+  gitSetRemote: (id, remoteUrl, token) => electron.ipcRenderer.invoke("git-set-remote", id, remoteUrl, token),
+  gitPull: (id) => electron.ipcRenderer.invoke("git-pull", id),
+  gitPush: (id, commitMessage) => electron.ipcRenderer.invoke("git-push", id, commitMessage)
 });
