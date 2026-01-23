@@ -23,7 +23,7 @@ const isPushing = ref(false)
 // Filter out the target instance from available sources and apply search
 const availableInstances = computed(() => {
   return props.instances
-    .filter(inst => inst.id !== props.targetInstance?.id)
+    // .filter(inst => inst.id !== props.targetInstance?.id)
     .filter(inst => 
       inst.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       inst.url.toLowerCase().includes(searchQuery.value.toLowerCase())

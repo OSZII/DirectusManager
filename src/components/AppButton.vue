@@ -13,8 +13,16 @@ const props = defineProps<{
 }>()
 
 const variantClass = computed(() => {
-  if (!props.variant || props.variant === 'default') return ''
+  if (props.variant === 'primary') return 'btn-primary' // DaisyUI uses btn-error for danger
+  if (props.variant === 'secondary') return 'btn-secondary' // DaisyUI uses btn-error for danger
+  if (props.variant === 'accent') return 'btn-accent' // DaisyUI uses btn-error for danger
+  if (props.variant === 'success') return 'btn-success' // DaisyUI uses btn-error for danger
+  if (props.variant === 'warning') return 'btn-warning' // DaisyUI uses btn-error for danger
+  if (props.variant === 'error') return 'btn-error' // DaisyUI uses btn-error for danger
+  if (props.variant === 'ghost') return 'btn-ghost' // DaisyUI uses btn-error for danger
+  if (props.variant === 'link') return 'btn-link' // DaisyUI uses btn-error for danger
   if (props.variant === 'danger') return 'btn-error' // DaisyUI uses btn-error for danger
+  if (!props.variant || props.variant === 'default') return ''
   return `btn-${props.variant}`
 })
 

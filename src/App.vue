@@ -60,6 +60,8 @@ async function handlePull(instance: Instance, callback: (success: boolean) => vo
     const result = await window.ipcRenderer.pullInstance(instance.id);
     if (result.success) {
       alert(`✅ Pull successful for ${instance.name}!`);
+      // Refresh git statuses in InstanceList
+      instanceListRef.value?.fetchGitStatuses();
     } else {
       alert(`⚠️ Pull completed but may have issues for ${instance.name}.`);
     }
@@ -167,11 +169,10 @@ async function handleGitPush(instance: Instance, callback: (success: boolean) =>
 <template>
   <div class="h-screen flex flex-col bg-gradient-to-br from-base-300 via-base-200 to-base-300" data-theme="night">
     <!-- Header -->
-    <header class="navbar bg-base-100/80 backdrop-blur-lg border-b border-base-content/10 shadow-lg">
+    <header class="navbar bg-base-100/80 backdrop-blur-lg border-b border-base-content/10 shadow-lg p-6">
       <div class="flex justify-between w-full max-w-5xl mx-auto">
         <div class="flex flex-1 gap-3 ">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
-            <Server class="h-6 w-6 text-primary-content" />
             <img src="/src/assets/directus-logo.png" />
           </div>
           <div>
@@ -184,8 +185,6 @@ async function handleGitPush(instance: Instance, callback: (success: boolean) =>
         <div class="flex items-center">
           <AppButton 
             variant="primary" 
-            size="sm" 
-            class="shadow-lg shadow-primary/20 hover:shadow-primary/40" 
             @click="openAddModal"
           >
             <template #icon><Plus class="h-4 w-4" /></template>

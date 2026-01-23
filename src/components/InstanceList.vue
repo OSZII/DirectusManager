@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { Instance, GitStatus } from '../vite-env'
 import { Globe, MoreVertical, Edit, FolderOpen, Trash2, GitBranch, Link } from 'lucide-vue-next'
 import AppButton from './AppButton.vue'
@@ -43,8 +43,19 @@ async function fetchGitStatuses() {
   }
 }
 
+let pollInterval: NodeJS.Timeout | null = null
+
 // Refresh statuses on mount and when instances change
-onMounted(fetchGitStatuses)
+onMounted(() => {
+  fetchGitStatuses()
+  // Poll every minute
+  pollInterval = setInterval(fetchGitStatuses, 60000)
+})
+
+onUnmounted(() => {
+  if (pollInterval) clearInterval(pollInterval)
+})
+
 watch(() => props.instances, fetchGitStatuses, { deep: true })
 
 function handlePull(instance: Instance) {
