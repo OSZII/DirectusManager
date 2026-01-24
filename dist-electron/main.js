@@ -5439,6 +5439,22 @@ function registerIpcHandlers() {
     url.username = token;
     return url.toString();
   }
+  function findGitRoot(startDir) {
+    let currentDir = startDir;
+    const root = path.parse(currentDir).root;
+    while (currentDir !== root) {
+      const gitDir = path.join(currentDir, ".git");
+      if (fs.existsSync(gitDir)) {
+        return currentDir;
+      }
+      currentDir = path.dirname(currentDir);
+    }
+    const rootGitDir = path.join(root, ".git");
+    if (fs.existsSync(rootGitDir)) {
+      return root;
+    }
+    return null;
+  }
   ipcMain.handle("git-status", async (_event, instanceId) => {
     var _a2;
     const instances = loadConfig();
@@ -5448,11 +5464,11 @@ function registerIpcHandlers() {
     if (!fs.existsSync(instanceDir)) {
       return { initialized: false, hasRemote: false, changesCount: 0 };
     }
-    const gitDir = path.join(instanceDir, ".git");
-    if (!fs.existsSync(gitDir)) {
+    const gitRoot = findGitRoot(instanceDir);
+    if (!gitRoot) {
       return { initialized: false, hasRemote: false, changesCount: 0 };
     }
-    const git = esm_default(instanceDir);
+    const git = esm_default(gitRoot);
     try {
       const remotes = await git.getRemotes(true);
       const origin = remotes.find((r) => r.name === "origin");
@@ -5464,7 +5480,9 @@ function registerIpcHandlers() {
         hasRemote: !!origin,
         remoteUrl: ((_a2 = origin == null ? void 0 : origin.refs) == null ? void 0 : _a2.fetch) || instance.gitRemoteUrl || "",
         currentBranch: branchSummary.current || "main",
-        changesCount
+        changesCount,
+        gitRoot: gitRoot !== instanceDir ? gitRoot : void 0
+        // Include if git root is a parent
       };
     } catch (e) {
       console.error("Git status error:", e);
@@ -5475,12 +5493,23 @@ function registerIpcHandlers() {
     const instances = loadConfig();
     const instance = instances.find((i) => i.id === instanceId);
     if (!instance) throw new Error("Instance not found");
-    const git = getGitForInstance(instance);
+    const instanceDir = getInstanceDir(instance);
+    if (!fs.existsSync(instanceDir)) {
+      fs.mkdirSync(instanceDir, { recursive: true });
+    }
+    const existingGitRoot = findGitRoot(instanceDir);
+    if (existingGitRoot) {
+      return {
+        success: true,
+        alreadyExists: true,
+        gitRoot: existingGitRoot
+      };
+    }
+    const git = esm_default(instanceDir);
     await git.init();
     try {
       await git.log();
     } catch {
-      const instanceDir = getInstanceDir(instance);
       const gitignorePath = path.join(instanceDir, ".gitignore");
       if (!fs.existsSync(gitignorePath)) {
         fs.writeFileSync(gitignorePath, "node_modules/\n.DS_Store\n");
@@ -5488,7 +5517,7 @@ function registerIpcHandlers() {
       await git.add(".gitignore");
       await git.commit("Initial commit");
     }
-    return { success: true };
+    return { success: true, alreadyExists: false };
   });
   ipcMain.handle("git-set-remote", async (_event, instanceId, remoteUrl, token) => {
     const instances = loadConfig();

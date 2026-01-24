@@ -239,6 +239,28 @@ function registerIpcHandlers() {
     return url.toString();
   }
 
+  // Helper to find git root in current dir or any parent directory
+  function findGitRoot(startDir: string): string | null {
+    let currentDir = startDir;
+    const root = path.parse(currentDir).root;
+
+    while (currentDir !== root) {
+      const gitDir = path.join(currentDir, '.git');
+      if (fs.existsSync(gitDir)) {
+        return currentDir;
+      }
+      currentDir = path.dirname(currentDir);
+    }
+
+    // Check root as well
+    const rootGitDir = path.join(root, '.git');
+    if (fs.existsSync(rootGitDir)) {
+      return root;
+    }
+
+    return null;
+  }
+
   // Get git status for an instance
   ipcMain.handle('git-status', async (_event, instanceId: string) => {
     const instances = loadConfig();
@@ -252,13 +274,13 @@ function registerIpcHandlers() {
       return { initialized: false, hasRemote: false, changesCount: 0 };
     }
 
-    // Check if .git folder exists
-    const gitDir = path.join(instanceDir, '.git');
-    if (!fs.existsSync(gitDir)) {
+    // Check if a git repo exists in this folder or any parent
+    const gitRoot = findGitRoot(instanceDir);
+    if (!gitRoot) {
       return { initialized: false, hasRemote: false, changesCount: 0 };
     }
 
-    const git = simpleGit(instanceDir);
+    const git = simpleGit(gitRoot);
 
     try {
       // Get remotes
@@ -277,7 +299,8 @@ function registerIpcHandlers() {
         hasRemote: !!origin,
         remoteUrl: origin?.refs?.fetch || instance.gitRemoteUrl || '',
         currentBranch: branchSummary.current || 'main',
-        changesCount
+        changesCount,
+        gitRoot: gitRoot !== instanceDir ? gitRoot : undefined // Include if git root is a parent
       };
     } catch (e) {
       console.error('Git status error:', e);
@@ -291,8 +314,25 @@ function registerIpcHandlers() {
     const instance = instances.find((i: any) => i.id === instanceId);
     if (!instance) throw new Error('Instance not found');
 
-    const git = getGitForInstance(instance);
+    const instanceDir = getInstanceDir(instance);
 
+    // Ensure directory exists
+    if (!fs.existsSync(instanceDir)) {
+      fs.mkdirSync(instanceDir, { recursive: true });
+    }
+
+    // Check if a git repo already exists in the folder or any parent
+    const existingGitRoot = findGitRoot(instanceDir);
+    if (existingGitRoot) {
+      return {
+        success: true,
+        alreadyExists: true,
+        gitRoot: existingGitRoot
+      };
+    }
+
+    // No existing repo found, initialize a new one
+    const git = simpleGit(instanceDir);
     await git.init();
 
     // Create initial commit if no commits exist
@@ -300,7 +340,6 @@ function registerIpcHandlers() {
       await git.log();
     } catch {
       // No commits yet, create initial commit
-      const instanceDir = getInstanceDir(instance);
       const gitignorePath = path.join(instanceDir, '.gitignore');
       if (!fs.existsSync(gitignorePath)) {
         fs.writeFileSync(gitignorePath, 'node_modules/\n.DS_Store\n');
@@ -309,7 +348,7 @@ function registerIpcHandlers() {
       await git.commit('Initial commit');
     }
 
-    return { success: true };
+    return { success: true, alreadyExists: false };
   });
 
   // Set remote origin with token
