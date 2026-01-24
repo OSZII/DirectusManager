@@ -6,7 +6,7 @@ Directus Manager is a powerful desktop client built with **Electron + Vue** desi
 ![Version](https://img.shields.io/badge/version-0.1.0-green)
 
 ---
-
+![alt text](image.png)
 ## ✨ Features
 
 * **Native Performance:** Fast, lightweight desktop experience via Electron.
