@@ -5,7 +5,7 @@ import AddInstanceForm from './components/AddInstanceForm.vue'
 import PushInstanceForm from './components/PushInstanceForm.vue'
 import GitRemoteForm from './components/GitRemoteForm.vue'
 import { Instance } from './vite-env'
-import { Server, Plus, Database } from 'lucide-vue-next'
+import { Server, Plus, Database, Github } from 'lucide-vue-next'
 import AppButton from './components/AppButton.vue'
 
 const instances = ref<Instance[]>([])
@@ -235,7 +235,9 @@ async function handleGitPush(instance: Instance, callback: (success: boolean) =>
 
     <!-- Footer -->
     <footer class="py-3 px-6 bg-base-100/50 border-t border-base-content/5 text-center">
-      <p class="text-xs text-base-content/40">Directus Manager v0.1.0 • Built with Electron + Vue</p>
+      <!-- DO NOT TOUCH THIS OR YOU WILL BREAK THE LICENSE AGREMENT AND BE LIABLE FOR THE CONSEQUENCES -->
+      <div class="w-full justify-center  gap-2 items-center flex text-xs text-base-content/40">Directus Manager v0.1.0 • by <a class="text-white underline" href="https://www.ostojicstefan.com/en" target="_blank">Stefan Ostojic</a><a href="https://github.com/OSZII/DirectusManager" target="_blank"><Github /></a></div>
+        <!-- YOU MAY ADD MODIFIED BY WITH YOUR NAME AND A LINK TO YOUR WEBSITE UNDER THIS COMMENT -->
     </footer>
 
     <!-- Add/Edit Modal -->

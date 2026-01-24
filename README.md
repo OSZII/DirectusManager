@@ -1,18 +1,32 @@
-# Vue 3 + TypeScript + Vite
+# Directus Manager 🚀
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Directus Manager is a powerful desktop client built with **Electron + Vue** designed to streamline your workflow when managing Directus instances. It provides a native feel and enhanced performance for developers who want a dedicated environment for their headless CMS management.
 
-## Recommended IDE Setup
+![License](https://img.shields.io/badge/license-Custom-blue)
+![Version](https://img.shields.io/badge/version-0.1.0-green)
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+---
 
-## Type Support For `.vue` Imports in TS
+## ✨ Features
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+* **Native Performance:** Fast, lightweight desktop experience via Electron.
+* **Modern UI:** Built with Vue and styled for clarity and ease of use.
+* **Instance Management:** Quickly switch between different Directus environments.
+* **Developer Friendly:** Open for modifications and community improvements.
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+## 🛠️ Tech Stack
 
-1. Disable the built-in TypeScript Extension
-   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+* **Framework:** [Vue.js](https://vuejs.org/)
+* **Desktop Wrapper:** [Electron](https://www.electronjs.org/)
+* **Styling:** Tailwind CSS / DaisyUI (base-content/40)
+
+## 🚀 Getting Started
+
+### Prerequisites
+* Node.js (Latest LTS recommended)
+* npm or yarn
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone [https://github.com/OSZII/DirectusManager.git](https://github.com/OSZII/DirectusManager.git)

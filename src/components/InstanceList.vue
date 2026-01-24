@@ -150,7 +150,7 @@ defineExpose({ fetchGitStatuses })
                 />
               </div>
               <!-- Git Row -->
-              <div class="flex items-center gap-2 bg-orange-600/20 rounded-lg px-3 py-1.5">
+              <div class="relative flex items-center gap-2 bg-orange-600/20 rounded-lg px-3 py-1.5">
                 <img src="../assets/git-logo.png" alt="Git" class="h-5 w-5 object-contain" />
                 
                 <!-- State: Not initialized -->
@@ -191,7 +191,7 @@ defineExpose({ fetchGitStatuses })
                   <!-- Show changes count badge if there are changes -->
                   <span 
                     v-if="gitStatuses[instance.id]?.changesCount > 0" 
-                    class="badge badge-warning badge-sm"
+                    class="absolute -top-2 -right-2 badge badge-warning badge-sm"
                     :title="`${gitStatuses[instance.id].changesCount} uncommitted changes`"
                   >
                     {{ gitStatuses[instance.id].changesCount }}
