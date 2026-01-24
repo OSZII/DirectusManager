@@ -13,6 +13,7 @@ const showModal = ref(false)
 const editingInstance = ref<Instance | null>(null)
 const showPushModal = ref(false)
 const pushTargetInstance = ref<Instance | null>(null)
+const pushingId = ref<string | null>(null)
 
 // Git Remote Modal
 const showGitRemoteModal = ref(false)
@@ -89,19 +90,22 @@ function openPushModal(instance: Instance) {
 }
 
 async function handlePush(sourceId: string, targetId: string) {
+  const targetName = pushTargetInstance.value?.name;
+  showPushModal.value = false;
+  pushingId.value = targetId;
   try {
     const result = await window.ipcRenderer.pushInstance(sourceId, targetId);
-    showPushModal.value = false;
     if (result.success) {
-      alert(`✅ Push successful to ${pushTargetInstance.value?.name}!`);
+      alert(`✅ Push successful to ${targetName}!`);
     } else {
       alert(`⚠️ Push completed but may have issues.`);
     }
     console.log('[push] success', result.output);
   } catch (err: any) {
-    showPushModal.value = false;
     alert(`❌ Push failed: ${err.message}`);
     console.error('[push] error', err.message);
+  } finally {
+    pushingId.value = null;
   }
 }
 
@@ -214,7 +218,8 @@ async function handleGitPush(instance: Instance, callback: (success: boolean) =>
         <InstanceList 
           v-else
           ref="instanceListRef"
-          :instances="instances" 
+          :instances="instances"
+          :pushingId="pushingId"
           @edit="openEditModal" 
           @delete="handleDelete" 
           @pull="handlePull"

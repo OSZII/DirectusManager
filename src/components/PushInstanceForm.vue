@@ -18,7 +18,6 @@ const emit = defineEmits<{
 
 const searchQuery = ref('')
 const selectedInstanceId = ref<string | null>(null)
-const isPushing = ref(false)
 
 // Filter out the target instance from available sources and apply search
 const availableInstances = computed(() => {
@@ -39,13 +38,11 @@ watch(() => props.show, (newVal) => {
   if (newVal) {
     searchQuery.value = ''
     selectedInstanceId.value = null
-    isPushing.value = false
   }
 })
 
-async function handleConfirm() {
+function handleConfirm() {
   if (!selectedInstanceId.value || !props.targetInstance) return
-  isPushing.value = true
   emit('confirm', selectedInstanceId.value, props.targetInstance.id)
 }
 </script>
@@ -133,13 +130,12 @@ async function handleConfirm() {
     </div>
 
     <template #footer>
-      <AppButton variant="ghost" @click="emit('close')" :disabled="isPushing">Cancel</AppButton>
+      <AppButton variant="ghost" @click="emit('close')">Cancel</AppButton>
       <AppButton 
         variant="primary" 
         @click="handleConfirm"
-        :disabled="!selectedInstanceId || isPushing"
-        :loading="isPushing"
-        :label="isPushing ? 'Pushing...' : 'Confirm Push'"
+        :disabled="!selectedInstanceId"
+        label="Confirm Push"
       />
     </template>
   </AppModal>

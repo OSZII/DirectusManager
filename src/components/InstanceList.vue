@@ -8,6 +8,7 @@ import PullButton from './PullButton.vue'
 
 const props = defineProps<{
   instances: Instance[]
+  pushingId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -143,6 +144,8 @@ defineExpose({ fetchGitStatuses })
                   @click="handlePull(instance)"
                 />
                 <PushButton 
+                  :loading="props.pushingId === instance.id"
+                  :disabled="props.pushingId === instance.id"
                   @click="handlePush(instance)"
                 />
               </div>

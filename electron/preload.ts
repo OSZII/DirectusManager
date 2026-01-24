@@ -33,4 +33,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   gitSetRemote: (id: string, remoteUrl: string, token: string) => ipcRenderer.invoke('git-set-remote', id, remoteUrl, token),
   gitPull: (id: string) => ipcRenderer.invoke('git-pull', id),
   gitPush: (id: string, commitMessage?: string) => ipcRenderer.invoke('git-push', id, commitMessage),
+
+  // Folder Selection API
+  selectSchemaFolder: () => ipcRenderer.invoke('select-schema-folder'),
 })

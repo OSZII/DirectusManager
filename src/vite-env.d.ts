@@ -10,6 +10,8 @@ export interface Instance {
     gitRemoteUrl?: string;
     encryptedGitToken?: string;
     gitToken?: string; // Fallback if encryption unavailable
+    // Custom schema path
+    customSchemaPath?: string; // Custom folder path for schema data
 }
 
 export interface GitStatus {
@@ -40,6 +42,9 @@ export interface IpcRendererApi {
     gitSetRemote: (id: string, remoteUrl: string, token: string) => Promise<{ success: boolean }>;
     gitPull: (id: string) => Promise<{ success: boolean; output: string }>;
     gitPush: (id: string, commitMessage?: string) => Promise<{ success: boolean; output: string }>;
+
+    // Folder Selection
+    selectSchemaFolder: () => Promise<string | null>;
 }
 
 declare global {

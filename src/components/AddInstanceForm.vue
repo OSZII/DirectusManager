@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { Instance } from '../vite-env'
-import { Globe, AlertCircle } from 'lucide-vue-next'
+import { Globe, AlertCircle, FolderOpen, X } from 'lucide-vue-next'
 import AppModal from './AppModal.vue'
 import AppButton from './AppButton.vue'
 
@@ -18,22 +18,34 @@ const emit = defineEmits<{
 const formData = ref<Partial<Instance>>({
   name: '',
   url: '',
-  token: ''
+  token: '',
+  customSchemaPath: ''
 })
 
 watch(() => props.editingInstance, (newVal) => {
   if (newVal) {
     formData.value = { ...newVal }
   } else {
-    formData.value = { name: '', url: '', token: '' }
+    formData.value = { name: '', url: '', token: '', customSchemaPath: '' }
   }
 }, { immediate: true })
 
 const isEditing = computed(() => !!props.editingInstance)
 
+async function browseSchemaFolder() {
+  const selectedPath = await window.ipcRenderer.selectSchemaFolder()
+  if (selectedPath) {
+    formData.value.customSchemaPath = selectedPath
+  }
+}
+
+function clearSchemaFolder() {
+  formData.value.customSchemaPath = ''
+}
+
 function save() {
   emit('save', { ...formData.value })
-  formData.value = { name: '', url: '', token: '' }
+  formData.value = { name: '', url: '', token: '', customSchemaPath: '' }
 }
 </script>
 
@@ -87,6 +99,45 @@ function save() {
           <span class="label-text-alt text-warning flex items-center gap-1 mt-2">
             <AlertCircle class="h-3.5 w-3.5" />
             Token is encrypted and stored securely
+          </span>
+        </label>
+      </div>
+
+      <div class="form-control w-full">
+        <label class="label">
+          <span class="label-text font-medium">Custom Schema Path</span>
+          <span class="label-text-alt text-base-content/50">Optional</span>
+        </label>
+        <div class="flex gap-2">
+          <input 
+            v-model="formData.customSchemaPath" 
+            type="text" 
+            readonly
+            placeholder="Use default folder" 
+            class="input placeholder:text-gray-500 input-bordered w-full focus:input-primary transition-colors cursor-pointer" 
+            @click="browseSchemaFolder"
+          />
+          <button 
+            type="button"
+            class="btn btn-ghost btn-square"
+            @click="browseSchemaFolder"
+            title="Browse for folder"
+          >
+            <FolderOpen class="h-5 w-5" />
+          </button>
+          <button 
+            v-if="formData.customSchemaPath"
+            type="button"
+            class="btn btn-ghost btn-square text-error"
+            @click="clearSchemaFolder"
+            title="Clear custom path"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <label class="label">
+          <span class="label-text-alt text-base-content/60">
+            Leave empty to use the default location in app data
           </span>
         </label>
       </div>

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, safeStorage, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, safeStorage, shell, dialog } from 'electron'
 import { fileURLToPath } from 'node:url'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
@@ -102,8 +102,11 @@ function registerIpcHandlers() {
   });
 
   // Helper to get instance-specific directory
-  function getInstanceDir(instanceName: string): string {
-    const folderName = instanceName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  function getInstanceDir(instance: any): string {
+    if (instance.customSchemaPath) {
+      return instance.customSchemaPath;
+    }
+    const folderName = instance.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     return path.join(app.getPath('userData'), folderName);
   }
 
@@ -120,7 +123,7 @@ function registerIpcHandlers() {
     }
 
     // Create instance folder
-    const instanceDir = getInstanceDir(instance.name);
+    const instanceDir = getInstanceDir(instance);
     if (!fs.existsSync(instanceDir)) fs.mkdirSync(instanceDir, { recursive: true });
 
     // Write config file
@@ -162,7 +165,7 @@ function registerIpcHandlers() {
     }
 
     // Get source folder (must have been pulled already)
-    const sourceDir = getInstanceDir(sourceInstance.name);
+    const sourceDir = getInstanceDir(sourceInstance);
     if (!fs.existsSync(sourceDir)) throw new Error('Source instance has not been pulled yet');
 
     // Write config with DESTINATION credentials but use SOURCE folder
@@ -189,7 +192,7 @@ function registerIpcHandlers() {
     const instance = instances.find((i: any) => i.id === instanceId);
     if (!instance) throw new Error('Instance not found');
 
-    const instanceDir = getInstanceDir(instance.name);
+    const instanceDir = getInstanceDir(instance);
     if (!fs.existsSync(instanceDir)) {
       // Create the folder if it doesn't exist
       fs.mkdirSync(instanceDir, { recursive: true });
@@ -199,11 +202,20 @@ function registerIpcHandlers() {
     return true;
   });
 
+  // ========== FOLDER SELECTION HANDLER ==========
+
+  ipcMain.handle('select-schema-folder', async () => {
+    const result = await dialog.showOpenDialog(win!, {
+      properties: ['openDirectory', 'createDirectory']
+    });
+    return result.filePaths[0] || null;
+  });
+
   // ========== GIT HANDLERS ==========
 
   // Helper to get git instance for a directory
-  function getGitForInstance(instanceName: string): SimpleGit {
-    const instanceDir = getInstanceDir(instanceName);
+  function getGitForInstance(instance: any): SimpleGit {
+    const instanceDir = getInstanceDir(instance);
     if (!fs.existsSync(instanceDir)) {
       fs.mkdirSync(instanceDir, { recursive: true });
     }
@@ -233,7 +245,7 @@ function registerIpcHandlers() {
     const instance = instances.find((i: any) => i.id === instanceId);
     if (!instance) throw new Error('Instance not found');
 
-    const instanceDir = getInstanceDir(instance.name);
+    const instanceDir = getInstanceDir(instance);
 
     // Check if directory exists
     if (!fs.existsSync(instanceDir)) {
@@ -279,7 +291,7 @@ function registerIpcHandlers() {
     const instance = instances.find((i: any) => i.id === instanceId);
     if (!instance) throw new Error('Instance not found');
 
-    const git = getGitForInstance(instance.name);
+    const git = getGitForInstance(instance);
 
     await git.init();
 
@@ -288,7 +300,7 @@ function registerIpcHandlers() {
       await git.log();
     } catch {
       // No commits yet, create initial commit
-      const instanceDir = getInstanceDir(instance.name);
+      const instanceDir = getInstanceDir(instance);
       const gitignorePath = path.join(instanceDir, '.gitignore');
       if (!fs.existsSync(gitignorePath)) {
         fs.writeFileSync(gitignorePath, 'node_modules/\n.DS_Store\n');
@@ -307,7 +319,7 @@ function registerIpcHandlers() {
     if (instanceIndex < 0) throw new Error('Instance not found');
 
     const instance = instances[instanceIndex];
-    const git = getGitForInstance(instance.name);
+    const git = getGitForInstance(instance);
 
     // Encrypt and save token
     if (token && safeStorage.isEncryptionAvailable()) {
@@ -341,7 +353,7 @@ function registerIpcHandlers() {
     const instance = instances.find((i: any) => i.id === instanceId);
     if (!instance) throw new Error('Instance not found');
 
-    const git = getGitForInstance(instance.name);
+    const git = getGitForInstance(instance);
 
     // Update remote URL with token for authentication
     const token = decryptGitToken(instance);
@@ -368,7 +380,7 @@ function registerIpcHandlers() {
     const instance = instances.find((i: any) => i.id === instanceId);
     if (!instance) throw new Error('Instance not found');
 
-    const git = getGitForInstance(instance.name);
+    const git = getGitForInstance(instance);
 
     // Update remote URL with token for authentication
     const token = decryptGitToken(instance);
