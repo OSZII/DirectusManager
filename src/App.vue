@@ -5,7 +5,7 @@ import AddInstanceForm from './components/AddInstanceForm.vue'
 import PushInstanceForm from './components/PushInstanceForm.vue'
 import GitRemoteForm from './components/GitRemoteForm.vue'
 import { Instance } from './vite-env'
-import { Server, Plus, Database, Github } from 'lucide-vue-next'
+import { Plus, Database, Github } from 'lucide-vue-next'
 import AppButton from './components/AppButton.vue'
 
 const instances = ref<Instance[]>([])
@@ -69,8 +69,13 @@ async function handlePull(instance: Instance, callback: (success: boolean) => vo
     console.log("[pull] success", result.output);
     callback(result.success);
   } catch (err: any) {
-    alert(`❌ Pull failed for ${instance.name}`);
-    console.log("[pull] error", err.message);
+    const msg = err.message || '';
+    if (msg.includes('directus-extension-sync') || msg.includes('ENDPOINT_NOT_FOUND') || msg.includes('404')) {
+      alert(`❌ Pull failed for ${instance.name}\n\nThe directus-extension-sync extension is not installed on your Directus instance. Please install it first!`);
+    } else {
+      alert(`❌ Pull failed for ${instance.name}\n\n${msg}`);
+    }
+    console.log("[pull] error", msg);
     callback(false);
   }
 }

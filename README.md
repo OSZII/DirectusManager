@@ -22,11 +22,26 @@ Directus Manager is a powerful desktop client built with **Electron + Vue** desi
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### Installation via npm (Recommended)
+
+Install globally to use the `directusmanager` command from anywhere:
+
+```bash
+npm install -g directusmanager
+```
+
+Then run:
+
+```bash
+directusmanager
+```
+
+### Installation from Source
+
+#### Prerequisites
 * Node.js (Latest LTS recommended)
 * npm or yarn
 
-### Installation
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/OSZII/DirectusManager.git](https://github.com/OSZII/DirectusManager.git)
+   git clone https://github.com/OSZII/DirectusManager.git
