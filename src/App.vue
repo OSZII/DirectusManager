@@ -9,6 +9,8 @@ import { Instance } from './vite-env'
 import { Plus, Database, Github, X } from 'lucide-vue-next'
 import AppButton from './components/AppButton.vue'
 
+const appVersion = __APP_VERSION__
+
 const instances = ref<Instance[]>([])
 const showModal = ref(false)
 const editingInstance = ref<Instance | null>(null)
@@ -267,7 +269,7 @@ async function handleGitPush(instance: Instance, callback: (success: boolean) =>
     <!-- Footer -->
     <footer class="py-3 px-6 bg-base-100/50 border-t border-base-content/5 text-center">
       <!-- DO NOT TOUCH THIS OR YOU WILL BREAK THE LICENSE AGREMENT AND BE LIABLE FOR THE CONSEQUENCES -->
-      <div class="w-full justify-center  gap-2 items-center flex text-xs text-base-content/40">Directus Manager v0.2.0 • by <a class="text-base-content underline" href="https://www.ostojicstefan.com/en" target="_blank">Stefan Ostojic </a> contact me at <a class="text-base-content underline" href="mailto:office@ostojicstefan.com">office@ostojicstefan.com</a><a href="https://github.com/OSZII/DirectusManager" target="_blank"><Github /></a></div>
+      <div class="w-full justify-center  gap-2 items-center flex text-xs text-base-content/40">Directus Manager v{{ appVersion }} • by <a class="text-base-content underline" href="https://www.ostojicstefan.com/en" target="_blank">Stefan Ostojic </a> contact me at <a class="text-base-content underline" href="mailto:office@ostojicstefan.com">office@ostojicstefan.com</a><a href="https://github.com/OSZII/DirectusManager" target="_blank"><Github /></a></div>
         <!-- YOU MAY ADD MODIFIED BY WITH YOUR NAME AND A LINK TO YOUR WEBSITE UNDER THIS COMMENT SEE LICENSE AGREEMENT ON HOW TO -->
     </footer>
 

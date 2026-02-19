@@ -26,7 +26,7 @@ I love seeing what people build! If you make significant changes and want to add
 <div
   class="w-full justify-center gap-2 items-center flex text-xs text-base-content/40"
 >
-  Directus Manager v0.2.0 • by
+  Directus Manager v1.1.0 • by
   <a
     class="text-white underline"
     href="[https://www.ostojicstefan.com/en](https://www.ostojicstefan.com/en)"
