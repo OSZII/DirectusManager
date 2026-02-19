@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   pullInstance: (id: string) => ipcRenderer.invoke('pull-instance', id),
   pushInstance: (sourceId: string, destId: string) => ipcRenderer.invoke('push-instance', sourceId, destId),
   openFolder: (id: string) => ipcRenderer.invoke('open-folder', id),
+  openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
 
   // Git API
   gitStatus: (id: string) => ipcRenderer.invoke('git-status', id),

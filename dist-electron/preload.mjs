@@ -24,6 +24,7 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   pullInstance: (id) => electron.ipcRenderer.invoke("pull-instance", id),
   pushInstance: (sourceId, destId) => electron.ipcRenderer.invoke("push-instance", sourceId, destId),
   openFolder: (id) => electron.ipcRenderer.invoke("open-folder", id),
+  openExternal: (url) => electron.ipcRenderer.invoke("open-external", url),
   // Git API
   gitStatus: (id) => electron.ipcRenderer.invoke("git-status", id),
   gitInit: (id) => electron.ipcRenderer.invoke("git-init", id),

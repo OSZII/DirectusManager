@@ -10,7 +10,6 @@ import require$$1$1 from "util";
 import require$$0 from "os";
 import { spawn } from "child_process";
 import { EventEmitter } from "node:events";
-var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 function getDefaultExportFromCjs(x) {
   return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
 }
@@ -173,12 +172,12 @@ function requireCommon() {
         if (!debug2.enabled) {
           return;
         }
-        const self2 = debug2;
+        const self = debug2;
         const curr = Number(/* @__PURE__ */ new Date());
         const ms2 = curr - (prevTime || curr);
-        self2.diff = ms2;
-        self2.prev = prevTime;
-        self2.curr = curr;
+        self.diff = ms2;
+        self.prev = prevTime;
+        self.curr = curr;
         prevTime = curr;
         args[0] = createDebug.coerce(args[0]);
         if (typeof args[0] !== "string") {
@@ -193,15 +192,15 @@ function requireCommon() {
           const formatter = createDebug.formatters[format];
           if (typeof formatter === "function") {
             const val = args[index];
-            match = formatter.call(self2, val);
+            match = formatter.call(self, val);
             args.splice(index, 1);
             index--;
           }
           return match;
         });
-        createDebug.formatArgs.call(self2, args);
-        const logFn = self2.log || createDebug.log;
-        logFn.apply(self2, args);
+        createDebug.formatArgs.call(self, args);
+        const logFn = self.log || createDebug.log;
+        logFn.apply(self, args);
       }
       debug2.namespace = namespace;
       debug2.useColors = createDebug.useColors();
@@ -777,95 +776,121 @@ function requireNode() {
   })(node, node.exports);
   return node.exports;
 }
-if (typeof process === "undefined" || process.type === "renderer" || process.browser === true || process.__nwjs) {
-  src.exports = requireBrowser();
-} else {
-  src.exports = requireNode();
+var hasRequiredSrc$1;
+function requireSrc$1() {
+  if (hasRequiredSrc$1) return src.exports;
+  hasRequiredSrc$1 = 1;
+  if (typeof process === "undefined" || process.type === "renderer" || process.browser === true || process.__nwjs) {
+    src.exports = requireBrowser();
+  } else {
+    src.exports = requireNode();
+  }
+  return src.exports;
 }
-var srcExports = src.exports;
-const debug = /* @__PURE__ */ getDefaultExportFromCjs(srcExports);
-(function(exports$1) {
-  var __importDefault = commonjsGlobal && commonjsGlobal.__importDefault || function(mod) {
-    return mod && mod.__esModule ? mod : { "default": mod };
-  };
-  Object.defineProperty(exports$1, "__esModule", { value: true });
-  const fs_1 = require$$0$1;
-  const debug_1 = __importDefault(srcExports);
-  const log = debug_1.default("@kwsites/file-exists");
-  function check(path2, isFile, isDirectory) {
-    log(`checking %s`, path2);
-    try {
-      const stat = fs_1.statSync(path2);
-      if (stat.isFile() && isFile) {
-        log(`[OK] path represents a file`);
-        return true;
-      }
-      if (stat.isDirectory() && isDirectory) {
-        log(`[OK] path represents a directory`);
-        return true;
-      }
-      log(`[FAIL] path represents something other than a file or directory`);
-      return false;
-    } catch (e) {
-      if (e.code === "ENOENT") {
-        log(`[FAIL] path is not accessible: %o`, e);
+var hasRequiredSrc;
+function requireSrc() {
+  if (hasRequiredSrc) return src$1;
+  hasRequiredSrc = 1;
+  (function(exports$1) {
+    var __importDefault = src$1 && src$1.__importDefault || function(mod) {
+      return mod && mod.__esModule ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports$1, "__esModule", { value: true });
+    const fs_1 = require$$0$1;
+    const debug_1 = __importDefault(requireSrc$1());
+    const log = debug_1.default("@kwsites/file-exists");
+    function check(path2, isFile, isDirectory) {
+      log(`checking %s`, path2);
+      try {
+        const stat = fs_1.statSync(path2);
+        if (stat.isFile() && isFile) {
+          log(`[OK] path represents a file`);
+          return true;
+        }
+        if (stat.isDirectory() && isDirectory) {
+          log(`[OK] path represents a directory`);
+          return true;
+        }
+        log(`[FAIL] path represents something other than a file or directory`);
         return false;
+      } catch (e) {
+        if (e.code === "ENOENT") {
+          log(`[FAIL] path is not accessible: %o`, e);
+          return false;
+        }
+        log(`[FATAL] %o`, e);
+        throw e;
       }
-      log(`[FATAL] %o`, e);
-      throw e;
     }
-  }
-  function exists(path2, type = exports$1.READABLE) {
-    return check(path2, (type & exports$1.FILE) > 0, (type & exports$1.FOLDER) > 0);
-  }
-  exports$1.exists = exists;
-  exports$1.FILE = 1;
-  exports$1.FOLDER = 2;
-  exports$1.READABLE = exports$1.FILE + exports$1.FOLDER;
-})(src$1);
-(function(exports$1) {
-  function __export2(m) {
-    for (var p in m) if (!exports$1.hasOwnProperty(p)) exports$1[p] = m[p];
-  }
-  Object.defineProperty(exports$1, "__esModule", { value: true });
-  __export2(src$1);
-})(dist$1);
-var dist = {};
-Object.defineProperty(dist, "__esModule", { value: true });
-var createDeferred = dist.createDeferred = deferred_1 = dist.deferred = void 0;
-function deferred() {
-  let done;
-  let fail;
-  let status = "pending";
-  const promise = new Promise((_done, _fail) => {
-    done = _done;
-    fail = _fail;
-  });
-  return {
-    promise,
-    done(result) {
-      if (status === "pending") {
-        status = "resolved";
-        done(result);
-      }
-    },
-    fail(error) {
-      if (status === "pending") {
-        status = "rejected";
-        fail(error);
-      }
-    },
-    get fulfilled() {
-      return status !== "pending";
-    },
-    get status() {
-      return status;
+    function exists(path2, type = exports$1.READABLE) {
+      return check(path2, (type & exports$1.FILE) > 0, (type & exports$1.FOLDER) > 0);
     }
-  };
+    exports$1.exists = exists;
+    exports$1.FILE = 1;
+    exports$1.FOLDER = 2;
+    exports$1.READABLE = exports$1.FILE + exports$1.FOLDER;
+  })(src$1);
+  return src$1;
 }
-var deferred_1 = dist.deferred = deferred;
-createDeferred = dist.createDeferred = deferred;
-dist.default = deferred;
+var hasRequiredDist$1;
+function requireDist$1() {
+  if (hasRequiredDist$1) return dist$1;
+  hasRequiredDist$1 = 1;
+  (function(exports$1) {
+    function __export2(m) {
+      for (var p in m) if (!exports$1.hasOwnProperty(p)) exports$1[p] = m[p];
+    }
+    Object.defineProperty(exports$1, "__esModule", { value: true });
+    __export2(requireSrc());
+  })(dist$1);
+  return dist$1;
+}
+var distExports$1 = requireDist$1();
+var srcExports = requireSrc$1();
+const debug = /* @__PURE__ */ getDefaultExportFromCjs(srcExports);
+var dist = {};
+var hasRequiredDist;
+function requireDist() {
+  if (hasRequiredDist) return dist;
+  hasRequiredDist = 1;
+  Object.defineProperty(dist, "__esModule", { value: true });
+  dist.createDeferred = dist.deferred = void 0;
+  function deferred() {
+    let done;
+    let fail;
+    let status = "pending";
+    const promise = new Promise((_done, _fail) => {
+      done = _done;
+      fail = _fail;
+    });
+    return {
+      promise,
+      done(result) {
+        if (status === "pending") {
+          status = "resolved";
+          done(result);
+        }
+      },
+      fail(error) {
+        if (status === "pending") {
+          status = "rejected";
+          fail(error);
+        }
+      },
+      get fulfilled() {
+        return status !== "pending";
+      },
+      get status() {
+        return status;
+      }
+    };
+  }
+  dist.deferred = deferred;
+  dist.createDeferred = deferred;
+  dist.default = deferred;
+  return dist;
+}
+var distExports = requireDist();
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -981,7 +1006,7 @@ function forEachLineWithContent(input, callback) {
   return toLinesWithContent(input, true).map((line) => callback(line));
 }
 function folderExists(path2) {
-  return dist$1.exists(path2, dist$1.FOLDER);
+  return distExports$1.exists(path2, distExports$1.FOLDER);
 }
 function append(target, item) {
   if (Array.isArray(target)) {
@@ -1836,7 +1861,7 @@ var init_grep = __esm({
     init_utils();
     init_task();
     disallowedOptions = ["-h"];
-    Query = Symbol("grepQuery");
+    Query = /* @__PURE__ */ Symbol("grepQuery");
     GrepQuery = class {
       constructor() {
         this[_a] = [];
@@ -2280,7 +2305,7 @@ function taskCallback(task, response, callback = NOOP) {
     callback(null, data);
   };
   const onError2 = (err) => {
-    if ((err == null ? void 0 : err.task) === task) {
+    if (err?.task === task) {
       callback(
         err instanceof GitResponseError ? addDeprecationNoticeToError(err) : err,
         void 0
@@ -2666,8 +2691,8 @@ var init_parse_diff_summary = __esm({
           const inserted = /(\d+) i/.exec(summary);
           const deleted = /(\d+) d/.exec(summary);
           result.changed = asNumber(changed);
-          result.insertions = asNumber(inserted == null ? void 0 : inserted[1]);
-          result.deletions = asNumber(deleted == null ? void 0 : deleted[1]);
+          result.insertions = asNumber(inserted?.[1]);
+          result.deletions = asNumber(deleted?.[1]);
         }
       )
     ];
@@ -3522,12 +3547,12 @@ var init_StatusSummary = __esm({
           regexResult = behindReg.exec(line);
           result.behind = regexResult && +regexResult[1] || 0;
           regexResult = currentReg.exec(line);
-          result.current = filterType(regexResult == null ? void 0 : regexResult[1], filterString, null);
+          result.current = filterType(regexResult?.[1], filterString, null);
           regexResult = trackingReg.exec(line);
-          result.tracking = filterType(regexResult == null ? void 0 : regexResult[1], filterString, null);
+          result.tracking = filterType(regexResult?.[1], filterString, null);
           regexResult = onEmptyBranchReg.exec(line);
           if (regexResult) {
-            result.current = filterType(regexResult == null ? void 0 : regexResult[1], filterString, result.current);
+            result.current = filterType(regexResult?.[1], filterString, result.current);
           }
           result.detached = /\(no branch\)/.test(line);
         }
@@ -3695,7 +3720,7 @@ var init_simple_git_api = __esm({
         if (typeof directory === "string") {
           return this._runTask(changeWorkingDirectoryTask(directory, this._executor), next);
         }
-        if (typeof (directory == null ? void 0 : directory.path) === "string") {
+        if (typeof directory?.path === "string") {
           return this._runTask(
             changeWorkingDirectoryTask(
               directory.path,
@@ -3794,7 +3819,7 @@ var init_scheduler = __esm({
       let id = 0;
       return () => {
         id++;
-        const { promise, done } = createDeferred();
+        const { promise, done } = distExports.createDeferred();
         return {
           promise,
           done,
@@ -4961,7 +4986,7 @@ function commandConfigPrefixingPlugin(configuration) {
   };
 }
 init_utils();
-var never = deferred_1().promise;
+var never = distExports.deferred().promise;
 function completionDetectionPlugin({
   onClose = true,
   onExit = 50
@@ -4969,10 +4994,10 @@ function completionDetectionPlugin({
   function createEvents() {
     let exitCode = -1;
     const events = {
-      close: deferred_1(),
-      closeTimeout: deferred_1(),
-      exit: deferred_1(),
-      exitTimeout: deferred_1()
+      close: distExports.deferred(),
+      closeTimeout: distExports.deferred(),
+      exit: distExports.deferred(),
+      exitTimeout: distExports.deferred()
     };
     const result = Promise.race([
       onClose === false ? never : events.closeTimeout.promise,
@@ -5004,12 +5029,11 @@ function completionDetectionPlugin({
   return {
     type: "spawn.after",
     async action(_data, { spawned, close }) {
-      var _a2, _b;
       const events = createEvents();
       let deferClose = true;
       let quickClose = () => void (deferClose = false);
-      (_a2 = spawned.stdout) == null ? void 0 : _a2.on("data", quickClose);
-      (_b = spawned.stderr) == null ? void 0 : _b.on("data", quickClose);
+      spawned.stdout?.on("data", quickClose);
+      spawned.stderr?.on("data", quickClose);
       spawned.on("error", quickClose);
       spawned.on("close", (code) => events.close(code));
       spawned.on("exit", (code) => events.exit(code));
@@ -5135,11 +5159,10 @@ function progressMonitorPlugin(progress) {
   const onProgress = {
     type: "spawn.after",
     action(_data, context) {
-      var _a2;
       if (!context.commands.includes(progressCommand)) {
         return;
       }
-      (_a2 = context.spawned.stderr) == null ? void 0 : _a2.on("data", (chunk) => {
+      context.spawned.stderr?.on("data", (chunk) => {
         const message = /^([\s\S]+?):\s*(\d+)% \((\d+)\/(\d+)\)/.exec(chunk.toString("utf8"));
         if (!message) {
           return;
@@ -5187,16 +5210,14 @@ function timeoutPlugin({
     return {
       type: "spawn.after",
       action(_data, context) {
-        var _a2, _b;
         let timeout;
         function wait() {
           timeout && clearTimeout(timeout);
           timeout = setTimeout(kill, block);
         }
         function stop() {
-          var _a3, _b2;
-          (_a3 = context.spawned.stdout) == null ? void 0 : _a3.off("data", wait);
-          (_b2 = context.spawned.stderr) == null ? void 0 : _b2.off("data", wait);
+          context.spawned.stdout?.off("data", wait);
+          context.spawned.stderr?.off("data", wait);
           context.spawned.off("exit", stop);
           context.spawned.off("close", stop);
           timeout && clearTimeout(timeout);
@@ -5205,8 +5226,8 @@ function timeoutPlugin({
           stop();
           context.kill(new GitPluginError(void 0, "timeout", `block timeout reached`));
         }
-        stdOut && ((_a2 = context.spawned.stdout) == null ? void 0 : _a2.on("data", wait));
-        stdErr && ((_b = context.spawned.stderr) == null ? void 0 : _b.on("data", wait));
+        stdOut && context.spawned.stdout?.on("data", wait);
+        stdErr && context.spawned.stderr?.on("data", wait);
         context.spawned.on("exit", stop);
         context.spawned.on("close", stop);
         wait();
@@ -5245,7 +5266,6 @@ function suffixPathsPlugin() {
 init_utils();
 var Git = require_git();
 function gitInstanceFactory(baseDir, options) {
-  var _a2;
   const plugins = new PluginStore();
   const config = createInstanceConfig(
     baseDir && (typeof baseDir === "string" ? { baseDir } : baseDir) || {},
@@ -5269,7 +5289,7 @@ function gitInstanceFactory(baseDir, options) {
   config.spawnOptions && plugins.add(spawnOptionsPlugin(config.spawnOptions));
   plugins.add(errorDetectionPlugin(errorDetectionHandler(true)));
   config.errors && plugins.add(errorDetectionPlugin(config.errors));
-  customBinaryPlugin(plugins, config.binary, (_a2 = config.unsafe) == null ? void 0 : _a2.allowUnsafeCustomBinary);
+  customBinaryPlugin(plugins, config.binary, config.unsafe?.allowUnsafeCustomBinary);
   return new Git(config, plugins);
 }
 init_git_response_error();
@@ -5414,8 +5434,11 @@ function registerIpcHandlers() {
     await shell.openPath(instanceDir);
     return true;
   });
+  ipcMain.handle("open-external", async (_event, url) => {
+    await shell.openExternal(url);
+    return true;
+  });
   ipcMain.handle("get-schema", async (_event, instanceId) => {
-    var _a2;
     const instances = loadConfig();
     const instance = instances.find((i) => i.id === instanceId);
     if (!instance) throw new Error("Instance not found");
@@ -5462,27 +5485,21 @@ function registerIpcHandlers() {
     }
     const junctionCollections = /* @__PURE__ */ new Set();
     for (const rel of relations) {
-      if ((_a2 = rel.meta) == null ? void 0 : _a2.junction_field) {
+      if (rel.meta?.junction_field) {
         junctionCollections.add(rel.collection);
       }
     }
     const collectionNames = new Set(collections.map((c) => c.collection));
     const normalizedCollections = collections.map((coll) => {
-      const fields = (fieldsByCollection[coll.collection] || []).sort((a, b) => {
-        var _a3, _b;
-        return (((_a3 = a.meta) == null ? void 0 : _a3.sort) ?? 999) - (((_b = b.meta) == null ? void 0 : _b.sort) ?? 999);
-      }).map((f) => {
-        var _a3, _b, _c, _d, _e, _f;
-        return {
-          field: f.field,
-          type: f.type || ((_a3 = f.schema) == null ? void 0 : _a3.data_type) || "unknown",
-          isPrimaryKey: ((_b = f.schema) == null ? void 0 : _b.is_primary_key) || false,
-          isForeignKey: !!((_c = f.schema) == null ? void 0 : _c.foreign_key_table),
-          foreignKeyTable: ((_d = f.schema) == null ? void 0 : _d.foreign_key_table) || void 0,
-          isNullable: ((_e = f.schema) == null ? void 0 : _e.is_nullable) ?? true,
-          special: ((_f = f.meta) == null ? void 0 : _f.special) || void 0
-        };
-      });
+      const fields = (fieldsByCollection[coll.collection] || []).sort((a, b) => (a.meta?.sort ?? 999) - (b.meta?.sort ?? 999)).map((f) => ({
+        field: f.field,
+        type: f.type || f.schema?.data_type || "unknown",
+        isPrimaryKey: f.schema?.is_primary_key || false,
+        isForeignKey: !!f.schema?.foreign_key_table,
+        foreignKeyTable: f.schema?.foreign_key_table || void 0,
+        isNullable: f.schema?.is_nullable ?? true,
+        special: f.meta?.special || void 0
+      }));
       return {
         collection: coll.collection,
         fields,
@@ -5493,20 +5510,19 @@ function registerIpcHandlers() {
       const related = rel.related_collection;
       return collectionNames.has(related);
     }).map((rel) => {
-      var _a3, _b, _c, _d;
       let type = "M2O";
-      if ((_a3 = rel.meta) == null ? void 0 : _a3.junction_field) {
+      if (rel.meta?.junction_field) {
         type = "M2M";
-      } else if ((_b = rel.meta) == null ? void 0 : _b.one_field) {
+      } else if (rel.meta?.one_field) {
         type = "O2M";
       }
       return {
         collection: rel.collection,
         field: rel.field,
         relatedCollection: rel.related_collection,
-        relatedField: ((_c = rel.meta) == null ? void 0 : _c.one_field) || void 0,
+        relatedField: rel.meta?.one_field || void 0,
         type,
-        junctionField: ((_d = rel.meta) == null ? void 0 : _d.junction_field) || void 0
+        junctionField: rel.meta?.junction_field || void 0
       };
     });
     return {
@@ -5605,7 +5621,6 @@ function registerIpcHandlers() {
     return null;
   }
   ipcMain.handle("git-status", async (_event, instanceId) => {
-    var _a2;
     const instances = loadConfig();
     const instance = instances.find((i) => i.id === instanceId);
     if (!instance) throw new Error("Instance not found");
@@ -5627,7 +5642,7 @@ function registerIpcHandlers() {
       return {
         initialized: true,
         hasRemote: !!origin,
-        remoteUrl: ((_a2 = origin == null ? void 0 : origin.refs) == null ? void 0 : _a2.fetch) || instance.gitRemoteUrl || "",
+        remoteUrl: origin?.refs?.fetch || instance.gitRemoteUrl || "",
         currentBranch: branchSummary.current || "main",
         changesCount,
         gitRoot: gitRoot !== instanceDir ? gitRoot : void 0
@@ -5738,13 +5753,13 @@ function registerIpcHandlers() {
 }
 function createWindow() {
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    icon: path.join(process.env.VITE_PUBLIC, "logo.png"),
     webPreferences: {
       preload: path.join(__dirname$1, "preload.mjs")
     }
   });
   win.webContents.on("did-finish-load", () => {
-    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+    win?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
   });
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
@@ -5764,6 +5779,9 @@ app.on("activate", () => {
   }
 });
 app.whenReady().then(() => {
+  if (process.platform === "darwin" && app.dock) {
+    app.dock.setIcon(path.join(process.env.VITE_PUBLIC, "logo.png"));
+  }
   registerIpcHandlers();
   createWindow();
 });

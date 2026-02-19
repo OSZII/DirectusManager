@@ -121,6 +121,10 @@ function handlePullTypes(instance: Instance) {
   })
 }
 
+function openUrl(url: string) {
+  window.ipcRenderer.openExternal(url)
+}
+
 // Expose refresh function for parent to call after remote setup
 defineExpose({ fetchGitStatuses })
 </script>
@@ -138,8 +142,12 @@ defineExpose({ fetchGitStatuses })
             </div>
             <!-- Info -->
             <div class="min-w-0">
-              <h3 class="font-bold text-lg truncate">{{ instance.name }}</h3>
-              <p class="text-sm text-base-content/60 truncate">{{ instance.url }}</p>
+              <h3 class="font-bold text-lg leading-tight truncate">{{ instance.name }}</h3>
+              <a
+                :href="instance.url"
+                class="text-sm text-base-content/60 hover:text-primary truncate block transition-colors cursor-pointer"
+                @click.prevent="openUrl(instance.url)"
+              >{{ instance.url }}</a>
             </div>
           </div>
           <!-- Actions Container -->
@@ -232,7 +240,7 @@ defineExpose({ fetchGitStatuses })
           </div>
         </div>
         <!-- Bottom Action Bar -->
-        <div class="border-t border-base-content/10 mt-4 px-1 py-2 flex items-center justify-between">
+        <div class="border-t border-base-content/10 mt-3 px-1 py-2 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <AppButton variant="ghost" size="sm" @click="emit('view-schema', instance)">
               <template #icon><Workflow class="h-4 w-4" /></template>

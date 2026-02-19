@@ -72,72 +72,64 @@ function save() {
       <Globe class="h-5 w-5 text-primary" />
     </template>
 
-    <div class="space-y-4">
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text font-medium">Instance Name</span>
-        </label>
-        <input 
-          v-model="formData.name" 
-          type="text" 
-          placeholder="My Project" 
-          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
+    <div class="space-y-5">
+      <div class="space-y-1.5">
+        <p class="text-sm font-medium text-base-content">Instance Name</p>
+        <input
+          v-model="formData.name"
+          type="text"
+          placeholder="My Project"
+          class="input input-bordered w-full bg-base-100 border-base-content/10 placeholder:text-base-content/40 focus:border-primary focus:outline-none transition-colors"
         />
       </div>
 
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text font-medium">Directus URL</span>
-        </label>
-        <input 
-          v-model="formData.url" 
-          type="url" 
-          placeholder="https://api.example.com" 
-          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
+      <div class="space-y-1.5">
+        <p class="text-sm font-medium text-base-content">Directus URL</p>
+        <input
+          v-model="formData.url"
+          type="url"
+          placeholder="https://api.example.com"
+          class="input input-bordered w-full bg-base-100 border-base-content/10 placeholder:text-base-content/40 focus:border-primary focus:outline-none transition-colors"
         />
       </div>
 
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text font-medium">Access Token</span>
-        </label>
-        <input 
-          v-model="formData.token" 
-          type="password" 
-          :placeholder="isEditing ? 'Leave blank to keep existing' : 'Enter your access token'" 
-          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
+      <div class="space-y-1.5">
+        <p class="text-sm font-medium text-base-content">Access Token</p>
+        <input
+          v-model="formData.token"
+          type="password"
+          :placeholder="isEditing ? 'Leave blank to keep existing' : 'Enter your access token'"
+          class="input input-bordered w-full bg-base-100 border-base-content/10 placeholder:text-base-content/40 focus:border-primary focus:outline-none transition-colors"
         />
-        <label class="label" v-if="isEditing">
-          <span class="label-text-alt text-warning flex items-center gap-1 mt-2">
-            <AlertCircle class="h-3.5 w-3.5" />
-            Token is encrypted and stored securely
-          </span>
-        </label>
+        <p v-if="isEditing" class="text-xs text-warning flex items-center gap-1.5 mt-1">
+          <AlertCircle class="h-3.5 w-3.5" />
+          Token is encrypted and stored securely
+        </p>
       </div>
 
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text font-medium">Custom Schema Path</span>
-          <span class="label-text-alt text-base-content/50">Optional</span>
-        </label>
+      <div class="space-y-1.5">
+        <div class="flex items-baseline justify-between">
+          <p class="text-sm font-medium text-base-content">Custom Schema Path</p>
+          <span class="text-xs text-base-content/50">Optional</span>
+        </div>
         <div class="flex gap-2">
-          <input 
-            v-model="formData.customSchemaPath" 
-            type="text" 
+          <input
+            v-model="formData.customSchemaPath"
+            type="text"
             readonly
-            placeholder="Use default folder" 
-            class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors cursor-pointer" 
+            placeholder="Use default folder"
+            class="input input-bordered w-full bg-base-200 border-base-content/10 placeholder:text-base-content/40 focus:border-primary focus:outline-none transition-colors cursor-pointer"
             @click="browseSchemaFolder"
           />
-          <button 
+          <button
             type="button"
-            class="btn btn-ghost btn-square"
+            class="btn btn-ghost btn-square border-base-content/10"
             @click="browseSchemaFolder"
             title="Browse for folder"
           >
             <FolderOpen class="h-5 w-5" />
           </button>
-          <button 
+          <button
             v-if="formData.customSchemaPath"
             type="button"
             class="btn btn-ghost btn-square text-error"
@@ -147,30 +139,28 @@ function save() {
             <X class="h-5 w-5" />
           </button>
         </div>
-        <label class="label">
-          <span class="label-text-alt text-base-content/60">
-            Leave empty to use the default location in app data
-          </span>
-        </label>
+        <p class="text-xs text-base-content/50">
+          Leave empty to use the default location in app data
+        </p>
       </div>
 
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text font-medium">Custom Types Path</span>
-          <span class="label-text-alt text-base-content/50">Optional</span>
-        </label>
+      <div class="space-y-1.5">
+        <div class="flex items-baseline justify-between">
+          <p class="text-sm font-medium text-base-content">Custom Types Path</p>
+          <span class="text-xs text-base-content/50">Optional</span>
+        </div>
         <div class="flex gap-2">
           <input
             v-model="formData.customTypesPath"
             type="text"
             readonly
             placeholder="Use default folder"
-            class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors cursor-pointer"
+            class="input input-bordered w-full bg-base-200 border-base-content/10 placeholder:text-base-content/40 focus:border-primary focus:outline-none transition-colors cursor-pointer"
             @click="browseTypesFolder"
           />
           <button
             type="button"
-            class="btn btn-ghost btn-square"
+            class="btn btn-ghost btn-square border-base-content/10"
             @click="browseTypesFolder"
             title="Browse for folder"
           >
@@ -186,11 +176,9 @@ function save() {
             <X class="h-5 w-5" />
           </button>
         </div>
-        <label class="label">
-          <span class="label-text-alt text-base-content/60">
-            Where to save generated TypeScript types (directus-types.d.ts)
-          </span>
-        </label>
+        <p class="text-xs text-base-content/50">
+          Where to save generated TypeScript types (directus-types.d.ts)
+        </p>
       </div>
     </div>
 

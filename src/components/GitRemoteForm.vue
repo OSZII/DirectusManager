@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { Instance } from '../vite-env'
-import { GitBranch, Key, Link } from 'lucide-vue-next'
+import { GitBranch, Key, Link, Info } from 'lucide-vue-next'
 import AppModal from './AppModal.vue'
 import AppButton from './AppButton.vue'
 
@@ -46,51 +46,41 @@ async function handleSave() {
       <GitBranch class="h-5 w-5 text-primary" />
     </template>
 
-    <div class="space-y-4">
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text font-medium flex items-center gap-2">
-            <Link class="h-4 w-4" />
-            Remote URL
-          </span>
-        </label>
-        <input 
-          v-model="remoteUrl" 
-          type="url" 
-          placeholder="https://github.com/username/repo.git" 
-          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
+    <div class="space-y-5">
+      <div class="space-y-1.5">
+        <p class="text-sm font-medium text-base-content flex items-center gap-2">
+          <Link class="h-4 w-4" />
+          Remote URL
+        </p>
+        <input
+          v-model="remoteUrl"
+          type="url"
+          placeholder="https://github.com/username/repo.git"
+          class="input input-bordered w-full bg-base-100 border-base-content/10 placeholder:text-base-content/40 focus:border-primary focus:outline-none transition-colors"
         />
-        <label class="label">
-          <span class="label-text-alt text-base-content/50">GitHub, GitLab, or any Git remote URL</span>
-        </label>
+        <p class="text-xs text-base-content/50">GitHub, GitLab, or any Git remote URL</p>
       </div>
 
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text font-medium flex items-center gap-2">
-            <Key class="h-4 w-4" />
-            Personal Access Token
-          </span>
-        </label>
-        <input 
-          v-model="gitToken" 
-          type="password" 
-          placeholder="ghp_xxxxxxxxxxxx or glpat-xxxxxxxxxxxx" 
-          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
+      <div class="space-y-1.5">
+        <p class="text-sm font-medium text-base-content flex items-center gap-2">
+          <Key class="h-4 w-4" />
+          Personal Access Token
+        </p>
+        <input
+          v-model="gitToken"
+          type="password"
+          placeholder="ghp_xxxxxxxxxxxx or glpat-xxxxxxxxxxxx"
+          class="input input-bordered w-full bg-base-100 border-base-content/10 placeholder:text-base-content/40 focus:border-primary focus:outline-none transition-colors"
         />
-        <label class="label">
-          <span class="label-text-alt text-base-content/50">Token will be encrypted and stored securely</span>
-        </label>
+        <p class="text-xs text-base-content/50">Token will be encrypted and stored securely</p>
       </div>
 
-      <div class="alert alert-info">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
+      <div class="p-4 rounded-xl bg-info/10 border border-info/20 flex items-start gap-3">
+        <Info class="h-5 w-5 text-info shrink-0 mt-0.5" />
         <div>
-          <p class="font-medium">How to get a token:</p>
-          <p class="text-sm">GitHub: Settings → Developer Settings → Personal Access Tokens</p>
-          <p class="text-sm">GitLab: Preferences → Access Tokens</p>
+          <p class="font-medium text-sm">How to get a token:</p>
+          <p class="text-sm text-base-content/70">GitHub: Settings → Developer Settings → Personal Access Tokens</p>
+          <p class="text-sm text-base-content/70">GitLab: Preferences → Access Tokens</p>
         </div>
       </div>
     </div>

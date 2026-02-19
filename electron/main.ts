@@ -202,6 +202,12 @@ function registerIpcHandlers() {
     return true;
   });
 
+  // Open external URL in default browser
+  ipcMain.handle('open-external', async (_event, url: string) => {
+    await shell.openExternal(url);
+    return true;
+  });
+
   // ========== SCHEMA HANDLER ==========
 
   ipcMain.handle('get-schema', async (_event, instanceId: string) => {
@@ -639,7 +645,7 @@ function registerIpcHandlers() {
 
 function createWindow() {
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    icon: path.join(process.env.VITE_PUBLIC, 'logo.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
     },
@@ -677,6 +683,10 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(() => {
+  // Set dock icon on macOS
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(path.join(process.env.VITE_PUBLIC, 'logo.png'));
+  }
   registerIpcHandlers();
   createWindow();
 })

@@ -67,6 +67,7 @@ export interface IpcRendererApi {
     pullInstance: (id: string) => Promise<{ success: boolean; output: string }>;
     pushInstance: (sourceId: string, destId: string) => Promise<{ success: boolean; output: string }>;
     openFolder: (id: string) => Promise<boolean>;
+    openExternal: (url: string) => Promise<boolean>;
 
     // Git Operations
     gitStatus: (id: string) => Promise<GitStatus>;
