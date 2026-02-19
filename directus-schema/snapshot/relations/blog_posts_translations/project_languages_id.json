@@ -1,0 +1,25 @@
+{
+  "collection": "blog_posts_translations",
+  "field": "project_languages_id",
+  "related_collection": "project_languages",
+  "meta": {
+    "junction_field": "blog_posts_id",
+    "many_collection": "blog_posts_translations",
+    "many_field": "project_languages_id",
+    "one_allowed_collections": null,
+    "one_collection": "project_languages",
+    "one_collection_field": null,
+    "one_deselect_action": "nullify",
+    "one_field": null,
+    "sort_field": null
+  },
+  "schema": {
+    "table": "blog_posts_translations",
+    "column": "project_languages_id",
+    "foreign_key_table": "project_languages",
+    "foreign_key_column": "id",
+    "constraint_name": "blog_posts_translations_project_languages_id_foreign",
+    "on_update": "NO ACTION",
+    "on_delete": "SET NULL"
+  }
+}
