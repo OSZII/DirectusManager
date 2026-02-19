@@ -58,7 +58,7 @@ async function handleSave() {
           v-model="remoteUrl" 
           type="url" 
           placeholder="https://github.com/username/repo.git" 
-          class="input placeholder:text-gray-500 input-bordered w-full focus:input-primary transition-colors" 
+          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
         />
         <label class="label">
           <span class="label-text-alt text-base-content/50">GitHub, GitLab, or any Git remote URL</span>
@@ -76,7 +76,7 @@ async function handleSave() {
           v-model="gitToken" 
           type="password" 
           placeholder="ghp_xxxxxxxxxxxx or glpat-xxxxxxxxxxxx" 
-          class="input placeholder:text-gray-500 input-bordered w-full focus:input-primary transition-colors" 
+          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
         />
         <label class="label">
           <span class="label-text-alt text-base-content/50">Token will be encrypted and stored securely</span>

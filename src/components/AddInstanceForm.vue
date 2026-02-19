@@ -69,7 +69,7 @@ function save() {
           v-model="formData.name" 
           type="text" 
           placeholder="My Project" 
-          class="input placeholder:text-gray-500 input-bordered w-full focus:input-primary transition-colors" 
+          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
         />
       </div>
 
@@ -81,7 +81,7 @@ function save() {
           v-model="formData.url" 
           type="url" 
           placeholder="https://api.example.com" 
-          class="input placeholder:text-gray-500 input-bordered w-full focus:input-primary transition-colors" 
+          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
         />
       </div>
 
@@ -93,7 +93,7 @@ function save() {
           v-model="formData.token" 
           type="password" 
           :placeholder="isEditing ? 'Leave blank to keep existing' : 'Enter your access token'" 
-          class="input placeholder:text-gray-500 input-bordered w-full focus:input-primary transition-colors" 
+          class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors" 
         />
         <label class="label" v-if="isEditing">
           <span class="label-text-alt text-warning flex items-center gap-1 mt-2">
@@ -114,7 +114,7 @@ function save() {
             type="text" 
             readonly
             placeholder="Use default folder" 
-            class="input placeholder:text-gray-500 input-bordered w-full focus:input-primary transition-colors cursor-pointer" 
+            class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors cursor-pointer" 
             @click="browseSchemaFolder"
           />
           <button 

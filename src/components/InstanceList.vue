@@ -137,7 +137,7 @@ defineExpose({ fetchGitStatuses })
             <!-- Button Rows -->
             <div class="flex flex-col gap-2">
               <!-- Directus Row -->
-              <div class="flex items-center gap-2 bg-purple-600/20 rounded-lg px-3 py-1.5">
+              <div class="flex items-center gap-2 bg-secondary/20 rounded-lg px-3 py-1.5">
                 <img src="../assets/directus-logo.png" alt="Directus" class="h-5 w-5 object-contain" />
                 <PullButton 
                   :loading="pullingId === instance.id"
@@ -150,7 +150,7 @@ defineExpose({ fetchGitStatuses })
                 />
               </div>
               <!-- Git Row -->
-              <div class="relative flex items-center gap-2 bg-orange-600/20 rounded-lg px-3 py-1.5">
+              <div class="relative flex items-center gap-2 bg-accent/20 rounded-lg px-3 py-1.5">
                 <img src="../assets/git-logo.png" alt="Git" class="h-5 w-5 object-contain" />
                 
                 <!-- State: Not initialized -->

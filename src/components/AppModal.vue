@@ -33,12 +33,12 @@ const widthClass = computed(() => {
     >
       <div v-if="show" class="fixed inset-0 z-9999 flex items-center justify-center">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="emit('close')"></div>
+        <div class="absolute inset-0 bg-neutral/80 backdrop-blur-sm" @click="emit('close')"></div>
         
         <!-- Modal -->
         <div 
           :class="[widthClass, 'relative z-10 bg-base-100 rounded-2xl shadow-2xl border border-base-content/10 overflow-hidden max-h-[90vh] overflow-y-auto']"
-          data-theme="night"
+          data-theme="directus"
         >
           <!-- Header -->
           <div class="px-6 pt-6 pb-4 border-b border-base-content/10 bg-linear-to-r from-primary/10 to-secondary/10">
