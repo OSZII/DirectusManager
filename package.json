@@ -1,6 +1,6 @@
 {
   "name": "directusmanager",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "description": "Desktop application for managing Directus CMS instances",
   "main": "dist-electron/main.js",
