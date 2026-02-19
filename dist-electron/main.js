@@ -5414,7 +5414,156 @@ function registerIpcHandlers() {
     await shell.openPath(instanceDir);
     return true;
   });
+  ipcMain.handle("get-schema", async (_event, instanceId) => {
+    var _a2;
+    const instances = loadConfig();
+    const instance = instances.find((i) => i.id === instanceId);
+    if (!instance) throw new Error("Instance not found");
+    const instanceDir = getInstanceDir(instance);
+    const snapshotDir = path.join(instanceDir, "snapshot");
+    if (!fs.existsSync(snapshotDir)) {
+      throw new Error("No snapshot found. Pull the instance first.");
+    }
+    const collectionsDir = path.join(snapshotDir, "collections");
+    const fieldsDir = path.join(snapshotDir, "fields");
+    const relationsDir = path.join(snapshotDir, "relations");
+    const collections = [];
+    if (fs.existsSync(collectionsDir)) {
+      for (const file of fs.readdirSync(collectionsDir)) {
+        if (!file.endsWith(".json")) continue;
+        const data = JSON.parse(fs.readFileSync(path.join(collectionsDir, file), "utf-8"));
+        collections.push(data);
+      }
+    }
+    const fieldsByCollection = {};
+    if (fs.existsSync(fieldsDir)) {
+      for (const collDir of fs.readdirSync(fieldsDir)) {
+        const collFieldsPath = path.join(fieldsDir, collDir);
+        if (!fs.statSync(collFieldsPath).isDirectory()) continue;
+        fieldsByCollection[collDir] = [];
+        for (const file of fs.readdirSync(collFieldsPath)) {
+          if (!file.endsWith(".json")) continue;
+          const data = JSON.parse(fs.readFileSync(path.join(collFieldsPath, file), "utf-8"));
+          fieldsByCollection[collDir].push(data);
+        }
+      }
+    }
+    const relations = [];
+    if (fs.existsSync(relationsDir)) {
+      for (const collDir of fs.readdirSync(relationsDir)) {
+        const collRelPath = path.join(relationsDir, collDir);
+        if (!fs.statSync(collRelPath).isDirectory()) continue;
+        for (const file of fs.readdirSync(collRelPath)) {
+          if (!file.endsWith(".json")) continue;
+          const data = JSON.parse(fs.readFileSync(path.join(collRelPath, file), "utf-8"));
+          relations.push(data);
+        }
+      }
+    }
+    const junctionCollections = /* @__PURE__ */ new Set();
+    for (const rel of relations) {
+      if ((_a2 = rel.meta) == null ? void 0 : _a2.junction_field) {
+        junctionCollections.add(rel.collection);
+      }
+    }
+    const collectionNames = new Set(collections.map((c) => c.collection));
+    const normalizedCollections = collections.map((coll) => {
+      const fields = (fieldsByCollection[coll.collection] || []).sort((a, b) => {
+        var _a3, _b;
+        return (((_a3 = a.meta) == null ? void 0 : _a3.sort) ?? 999) - (((_b = b.meta) == null ? void 0 : _b.sort) ?? 999);
+      }).map((f) => {
+        var _a3, _b, _c, _d, _e, _f;
+        return {
+          field: f.field,
+          type: f.type || ((_a3 = f.schema) == null ? void 0 : _a3.data_type) || "unknown",
+          isPrimaryKey: ((_b = f.schema) == null ? void 0 : _b.is_primary_key) || false,
+          isForeignKey: !!((_c = f.schema) == null ? void 0 : _c.foreign_key_table),
+          foreignKeyTable: ((_d = f.schema) == null ? void 0 : _d.foreign_key_table) || void 0,
+          isNullable: ((_e = f.schema) == null ? void 0 : _e.is_nullable) ?? true,
+          special: ((_f = f.meta) == null ? void 0 : _f.special) || void 0
+        };
+      });
+      return {
+        collection: coll.collection,
+        fields,
+        isJunction: junctionCollections.has(coll.collection)
+      };
+    });
+    const normalizedRelations = relations.filter((rel) => {
+      const related = rel.related_collection;
+      return collectionNames.has(related);
+    }).map((rel) => {
+      var _a3, _b, _c, _d;
+      let type = "M2O";
+      if ((_a3 = rel.meta) == null ? void 0 : _a3.junction_field) {
+        type = "M2M";
+      } else if ((_b = rel.meta) == null ? void 0 : _b.one_field) {
+        type = "O2M";
+      }
+      return {
+        collection: rel.collection,
+        field: rel.field,
+        relatedCollection: rel.related_collection,
+        relatedField: ((_c = rel.meta) == null ? void 0 : _c.one_field) || void 0,
+        type,
+        junctionField: ((_d = rel.meta) == null ? void 0 : _d.junction_field) || void 0
+      };
+    });
+    return {
+      collections: normalizedCollections,
+      relations: normalizedRelations
+    };
+  });
+  function getTypesOutputDir(instance) {
+    if (instance.customTypesPath) {
+      return instance.customTypesPath;
+    }
+    return getInstanceDir(instance);
+  }
+  ipcMain.handle("pull-types", async (_event, instanceId) => {
+    const instances = loadConfig();
+    const instance = instances.find((i) => i.id === instanceId);
+    if (!instance) throw new Error("Instance not found");
+    let token = instance.token;
+    if (instance.encryptedToken && safeStorage.isEncryptionAvailable()) {
+      token = safeStorage.decryptString(Buffer.from(instance.encryptedToken, "base64"));
+    }
+    if (!token) throw new Error("No access token configured for this instance");
+    const url = instance.url.replace(/\/+$/, "");
+    const response = await fetch(`${url}/server/specs/oas`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch OpenAPI spec: ${response.status} ${response.statusText}`);
+    }
+    const spec = await response.text();
+    const outputDir = getTypesOutputDir(instance);
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+    const tempFile = path.join(outputDir, "_directus-oas-temp.json");
+    const outputFile = path.join(outputDir, "directus-types.d.ts");
+    fs.writeFileSync(tempFile, spec);
+    const { exec } = await import("child_process");
+    return new Promise((resolve, reject) => {
+      exec(`npx openapi-typescript "${tempFile}" -o "${outputFile}"`, { cwd: outputDir }, (error, _stdout, stderr) => {
+        try {
+          fs.unlinkSync(tempFile);
+        } catch {
+        }
+        if (error) {
+          reject(new Error(stderr || error.message));
+        } else {
+          resolve({ success: true, output: `Types generated at ${outputFile}` });
+        }
+      });
+    });
+  });
   ipcMain.handle("select-schema-folder", async () => {
+    const result = await dialog.showOpenDialog(win, {
+      properties: ["openDirectory", "createDirectory"]
+    });
+    return result.filePaths[0] || null;
+  });
+  ipcMain.handle("select-types-folder", async () => {
     const result = await dialog.showOpenDialog(win, {
       properties: ["openDirectory", "createDirectory"]
     });

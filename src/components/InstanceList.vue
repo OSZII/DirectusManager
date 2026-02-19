@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { Instance, GitStatus } from '../vite-env'
-import { Globe, MoreVertical, Edit, FolderOpen, Trash2, GitBranch, Link } from 'lucide-vue-next'
+import { Globe, MoreVertical, Edit, FolderOpen, Trash2, GitBranch, Link, Workflow, FileCode } from 'lucide-vue-next'
 import AppButton from './AppButton.vue'
 import PushButton from './PushButton.vue'
 import PullButton from './PullButton.vue'
@@ -21,9 +21,12 @@ const emit = defineEmits<{
   (e: 'git-connect-remote', instance: Instance): void
   (e: 'git-pull', instance: Instance, callback: (success: boolean) => void): void
   (e: 'git-push', instance: Instance, callback: (success: boolean) => void): void
+  (e: 'view-schema', instance: Instance): void
+  (e: 'pull-types', instance: Instance, callback: (success: boolean) => void): void
 }>()
 
 const pullingId = ref<string | null>(null)
+const pullingTypesId = ref<string | null>(null)
 const gitPullingId = ref<string | null>(null)
 const gitPushingId = ref<string | null>(null)
 const gitInitializingId = ref<string | null>(null)
@@ -111,15 +114,22 @@ function handleGitPush(instance: Instance) {
   })
 }
 
+function handlePullTypes(instance: Instance) {
+  pullingTypesId.value = instance.id
+  emit('pull-types', instance, (_success: boolean) => {
+    pullingTypesId.value = null
+  })
+}
+
 // Expose refresh function for parent to call after remote setup
 defineExpose({ fetchGitStatuses })
 </script>
 
 <template>
   <div class="grid gap-4">
-    <div v-for="instance in instances" :key="instance.id" 
+    <div v-for="instance in instances" :key="instance.id"
       class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-content/5 hover:border-primary/30 group">
-      <div class="card-body p-5">
+      <div class="card-body p-5 pb-0">
         <div class="flex items-start justify-between gap-4">
           <div class="flex items-center gap-4 min-w-0">
             <!-- Icon -->
@@ -139,11 +149,11 @@ defineExpose({ fetchGitStatuses })
               <!-- Directus Row -->
               <div class="flex items-center gap-2 bg-secondary/20 rounded-lg px-3 py-1.5">
                 <img src="../assets/directus-logo.png" alt="Directus" class="h-5 w-5 object-contain" />
-                <PullButton 
+                <PullButton
                   :loading="pullingId === instance.id"
                   @click="handlePull(instance)"
                 />
-                <PushButton 
+                <PushButton
                   :loading="props.pushingId === instance.id"
                   :disabled="props.pushingId === instance.id"
                   @click="handlePush(instance)"
@@ -152,11 +162,11 @@ defineExpose({ fetchGitStatuses })
               <!-- Git Row -->
               <div class="relative flex items-center gap-2 bg-accent/20 rounded-lg px-3 py-1.5">
                 <img src="../assets/git-logo.png" alt="Git" class="h-5 w-5 object-contain" />
-                
+
                 <!-- State: Not initialized -->
                 <template v-if="!gitStatuses[instance.id]?.initialized">
-                  <AppButton 
-                    variant="ghost" 
+                  <AppButton
+                    variant="ghost"
                     size="sm"
                     :loading="gitInitializingId === instance.id"
                     @click="handleGitInit(instance)"
@@ -165,11 +175,11 @@ defineExpose({ fetchGitStatuses })
                     Init Git
                   </AppButton>
                 </template>
-                
+
                 <!-- State: Initialized but no remote -->
                 <template v-else-if="!gitStatuses[instance.id]?.hasRemote">
-                  <AppButton 
-                    variant="ghost" 
+                  <AppButton
+                    variant="ghost"
                     size="sm"
                     @click="handleGitConnectRemote(instance)"
                   >
@@ -177,20 +187,20 @@ defineExpose({ fetchGitStatuses })
                     Connect Remote
                   </AppButton>
                 </template>
-                
+
                 <!-- State: Fully configured - show push/pull -->
                 <template v-else>
-                  <PullButton 
+                  <PullButton
                     :loading="gitPullingId === instance.id"
                     @click="handleGitPull(instance)"
                   />
-                  <PushButton 
+                  <PushButton
                     :loading="gitPushingId === instance.id"
                     @click="handleGitPush(instance)"
                   />
                   <!-- Show changes count badge if there are changes -->
-                  <span 
-                    v-if="gitStatuses[instance.id]?.changesCount > 0" 
+                  <span
+                    v-if="gitStatuses[instance.id]?.changesCount > 0"
                     class="absolute -top-2 -right-2 badge badge-warning badge-sm"
                     :title="`${gitStatuses[instance.id].changesCount} uncommitted changes`"
                   >
@@ -206,12 +216,6 @@ defineExpose({ fetchGitStatuses })
               </label>
               <ul tabindex="0" class="dropdown-content menu p-2 shadow-xl bg-base-200 rounded-box w-48 border border-base-content/10 z-100">
                 <li>
-                  <AppButton variant="ghost" class="w-full justify-start font-normal" @click="emit('edit', instance)">
-                    <template #icon><Edit class="h-4 w-4" /></template>
-                    Edit
-                  </AppButton>
-                </li>
-                <li>
                   <AppButton variant="ghost" class="w-full justify-start font-normal" @click="emit('open-folder', instance)">
                     <template #icon><FolderOpen class="h-4 w-4" /></template>
                     Open in Folder
@@ -226,6 +230,28 @@ defineExpose({ fetchGitStatuses })
               </ul>
             </div>
           </div>
+        </div>
+        <!-- Bottom Action Bar -->
+        <div class="border-t border-base-content/10 mt-4 px-1 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <AppButton variant="ghost" size="sm" @click="emit('view-schema', instance)">
+              <template #icon><Workflow class="h-4 w-4" /></template>
+              View Schema
+            </AppButton>
+            <AppButton
+              variant="ghost"
+              size="sm"
+              :loading="pullingTypesId === instance.id"
+              @click="handlePullTypes(instance)"
+            >
+              <template #icon><FileCode class="h-4 w-4" /></template>
+              Pull TS Types
+            </AppButton>
+          </div>
+          <AppButton variant="ghost" size="sm" @click="emit('edit', instance)">
+            <template #icon><Edit class="h-4 w-4" /></template>
+            Edit
+          </AppButton>
         </div>
       </div>
     </div>

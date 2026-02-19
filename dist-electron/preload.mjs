@@ -31,5 +31,10 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   gitPull: (id) => electron.ipcRenderer.invoke("git-pull", id),
   gitPush: (id, commitMessage) => electron.ipcRenderer.invoke("git-push", id, commitMessage),
   // Folder Selection API
-  selectSchemaFolder: () => electron.ipcRenderer.invoke("select-schema-folder")
+  selectSchemaFolder: () => electron.ipcRenderer.invoke("select-schema-folder"),
+  selectTypesFolder: () => electron.ipcRenderer.invoke("select-types-folder"),
+  // Schema API
+  getSchema: (id) => electron.ipcRenderer.invoke("get-schema", id),
+  // TypeScript Types API
+  pullTypes: (id) => electron.ipcRenderer.invoke("pull-types", id)
 });

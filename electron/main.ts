@@ -202,9 +202,193 @@ function registerIpcHandlers() {
     return true;
   });
 
-  // ========== FOLDER SELECTION HANDLER ==========
+  // ========== SCHEMA HANDLER ==========
+
+  ipcMain.handle('get-schema', async (_event, instanceId: string) => {
+    const instances = loadConfig();
+    const instance = instances.find((i: any) => i.id === instanceId);
+    if (!instance) throw new Error('Instance not found');
+
+    const instanceDir = getInstanceDir(instance);
+    const snapshotDir = path.join(instanceDir, 'snapshot');
+
+    if (!fs.existsSync(snapshotDir)) {
+      throw new Error('No snapshot found. Pull the instance first.');
+    }
+
+    const collectionsDir = path.join(snapshotDir, 'collections');
+    const fieldsDir = path.join(snapshotDir, 'fields');
+    const relationsDir = path.join(snapshotDir, 'relations');
+
+    // Read collections
+    const collections: any[] = [];
+    if (fs.existsSync(collectionsDir)) {
+      for (const file of fs.readdirSync(collectionsDir)) {
+        if (!file.endsWith('.json')) continue;
+        const data = JSON.parse(fs.readFileSync(path.join(collectionsDir, file), 'utf-8'));
+        collections.push(data);
+      }
+    }
+
+    // Read fields grouped by collection
+    const fieldsByCollection: Record<string, any[]> = {};
+    if (fs.existsSync(fieldsDir)) {
+      for (const collDir of fs.readdirSync(fieldsDir)) {
+        const collFieldsPath = path.join(fieldsDir, collDir);
+        if (!fs.statSync(collFieldsPath).isDirectory()) continue;
+        fieldsByCollection[collDir] = [];
+        for (const file of fs.readdirSync(collFieldsPath)) {
+          if (!file.endsWith('.json')) continue;
+          const data = JSON.parse(fs.readFileSync(path.join(collFieldsPath, file), 'utf-8'));
+          fieldsByCollection[collDir].push(data);
+        }
+      }
+    }
+
+    // Read relations
+    const relations: any[] = [];
+    if (fs.existsSync(relationsDir)) {
+      for (const collDir of fs.readdirSync(relationsDir)) {
+        const collRelPath = path.join(relationsDir, collDir);
+        if (!fs.statSync(collRelPath).isDirectory()) continue;
+        for (const file of fs.readdirSync(collRelPath)) {
+          if (!file.endsWith('.json')) continue;
+          const data = JSON.parse(fs.readFileSync(path.join(collRelPath, file), 'utf-8'));
+          relations.push(data);
+        }
+      }
+    }
+
+    // Determine which collections are junction tables
+    const junctionCollections = new Set<string>();
+    for (const rel of relations) {
+      if (rel.meta?.junction_field) {
+        junctionCollections.add(rel.collection);
+      }
+    }
+
+    // Build collection names set for filtering relations
+    const collectionNames = new Set(collections.map((c: any) => c.collection));
+
+    // Normalize collections
+    const normalizedCollections = collections.map((coll: any) => {
+      const fields = (fieldsByCollection[coll.collection] || [])
+        .sort((a: any, b: any) => (a.meta?.sort ?? 999) - (b.meta?.sort ?? 999))
+        .map((f: any) => ({
+          field: f.field,
+          type: f.type || f.schema?.data_type || 'unknown',
+          isPrimaryKey: f.schema?.is_primary_key || false,
+          isForeignKey: !!(f.schema?.foreign_key_table),
+          foreignKeyTable: f.schema?.foreign_key_table || undefined,
+          isNullable: f.schema?.is_nullable ?? true,
+          special: f.meta?.special || undefined,
+        }));
+
+      return {
+        collection: coll.collection,
+        fields,
+        isJunction: junctionCollections.has(coll.collection),
+      };
+    });
+
+    // Normalize relations — skip those pointing to system tables not in snapshot
+    const normalizedRelations = relations
+      .filter((rel: any) => {
+        const related = rel.related_collection;
+        // Keep if related collection is in our snapshot, skip directus_* system tables not in snapshot
+        return collectionNames.has(related);
+      })
+      .map((rel: any) => {
+        let type: 'M2O' | 'O2M' | 'M2M' = 'M2O';
+        if (rel.meta?.junction_field) {
+          type = 'M2M';
+        } else if (rel.meta?.one_field) {
+          type = 'O2M';
+        }
+        return {
+          collection: rel.collection,
+          field: rel.field,
+          relatedCollection: rel.related_collection,
+          relatedField: rel.meta?.one_field || undefined,
+          type,
+          junctionField: rel.meta?.junction_field || undefined,
+        };
+      });
+
+    return {
+      collections: normalizedCollections,
+      relations: normalizedRelations,
+    };
+  });
+
+  // ========== TYPESCRIPT TYPES HANDLER ==========
+
+  function getTypesOutputDir(instance: any): string {
+    if (instance.customTypesPath) {
+      return instance.customTypesPath;
+    }
+    return getInstanceDir(instance);
+  }
+
+  ipcMain.handle('pull-types', async (_event, instanceId: string) => {
+    const instances = loadConfig();
+    const instance = instances.find((i: any) => i.id === instanceId);
+    if (!instance) throw new Error('Instance not found');
+
+    // Decrypt token
+    let token = instance.token;
+    if (instance.encryptedToken && safeStorage.isEncryptionAvailable()) {
+      token = safeStorage.decryptString(Buffer.from(instance.encryptedToken, 'base64'));
+    }
+    if (!token) throw new Error('No access token configured for this instance');
+
+    // Fetch OpenAPI spec
+    const url = instance.url.replace(/\/+$/, '');
+    const response = await fetch(`${url}/server/specs/oas`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch OpenAPI spec: ${response.status} ${response.statusText}`);
+    }
+
+    const spec = await response.text();
+
+    // Save spec to temp file
+    const outputDir = getTypesOutputDir(instance);
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+    const tempFile = path.join(outputDir, '_directus-oas-temp.json');
+    const outputFile = path.join(outputDir, 'directus-types.d.ts');
+
+    fs.writeFileSync(tempFile, spec);
+
+    // Run openapi-typescript
+    const { exec } = await import('child_process');
+    return new Promise((resolve, reject) => {
+      exec(`npx openapi-typescript "${tempFile}" -o "${outputFile}"`, { cwd: outputDir }, (error, _stdout, stderr) => {
+        // Clean up temp file
+        try { fs.unlinkSync(tempFile); } catch {}
+
+        if (error) {
+          reject(new Error(stderr || error.message));
+        } else {
+          resolve({ success: true, output: `Types generated at ${outputFile}` });
+        }
+      });
+    });
+  });
+
+  // ========== FOLDER SELECTION HANDLERS ==========
 
   ipcMain.handle('select-schema-folder', async () => {
+    const result = await dialog.showOpenDialog(win!, {
+      properties: ['openDirectory', 'createDirectory']
+    });
+    return result.filePaths[0] || null;
+  });
+
+  ipcMain.handle('select-types-folder', async () => {
     const result = await dialog.showOpenDialog(win!, {
       properties: ['openDirectory', 'createDirectory']
     });

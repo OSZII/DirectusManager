@@ -36,4 +36,11 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 
   // Folder Selection API
   selectSchemaFolder: () => ipcRenderer.invoke('select-schema-folder'),
+  selectTypesFolder: () => ipcRenderer.invoke('select-types-folder'),
+
+  // Schema API
+  getSchema: (id: string) => ipcRenderer.invoke('get-schema', id),
+
+  // TypeScript Types API
+  pullTypes: (id: string) => ipcRenderer.invoke('pull-types', id),
 })

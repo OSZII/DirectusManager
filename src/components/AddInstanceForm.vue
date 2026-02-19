@@ -19,14 +19,15 @@ const formData = ref<Partial<Instance>>({
   name: '',
   url: '',
   token: '',
-  customSchemaPath: ''
+  customSchemaPath: '',
+  customTypesPath: ''
 })
 
 watch(() => props.editingInstance, (newVal) => {
   if (newVal) {
     formData.value = { ...newVal }
   } else {
-    formData.value = { name: '', url: '', token: '', customSchemaPath: '' }
+    formData.value = { name: '', url: '', token: '', customSchemaPath: '', customTypesPath: '' }
   }
 }, { immediate: true })
 
@@ -43,9 +44,20 @@ function clearSchemaFolder() {
   formData.value.customSchemaPath = ''
 }
 
+async function browseTypesFolder() {
+  const selectedPath = await window.ipcRenderer.selectTypesFolder()
+  if (selectedPath) {
+    formData.value.customTypesPath = selectedPath
+  }
+}
+
+function clearTypesFolder() {
+  formData.value.customTypesPath = ''
+}
+
 function save() {
   emit('save', { ...formData.value })
-  formData.value = { name: '', url: '', token: '', customSchemaPath: '' }
+  formData.value = { name: '', url: '', token: '', customSchemaPath: '', customTypesPath: '' }
 }
 </script>
 
@@ -138,6 +150,45 @@ function save() {
         <label class="label">
           <span class="label-text-alt text-base-content/60">
             Leave empty to use the default location in app data
+          </span>
+        </label>
+      </div>
+
+      <div class="form-control w-full">
+        <label class="label">
+          <span class="label-text font-medium">Custom Types Path</span>
+          <span class="label-text-alt text-base-content/50">Optional</span>
+        </label>
+        <div class="flex gap-2">
+          <input
+            v-model="formData.customTypesPath"
+            type="text"
+            readonly
+            placeholder="Use default folder"
+            class="input placeholder:text-base-content/40 input-bordered w-full focus:input-primary transition-colors cursor-pointer"
+            @click="browseTypesFolder"
+          />
+          <button
+            type="button"
+            class="btn btn-ghost btn-square"
+            @click="browseTypesFolder"
+            title="Browse for folder"
+          >
+            <FolderOpen class="h-5 w-5" />
+          </button>
+          <button
+            v-if="formData.customTypesPath"
+            type="button"
+            class="btn btn-ghost btn-square text-error"
+            @click="clearTypesFolder"
+            title="Clear custom path"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <label class="label">
+          <span class="label-text-alt text-base-content/60">
+            Where to save generated TypeScript types (directus-types.d.ts)
           </span>
         </label>
       </div>

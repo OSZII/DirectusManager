@@ -12,6 +12,8 @@ export interface Instance {
     gitToken?: string; // Fallback if encryption unavailable
     // Custom schema path
     customSchemaPath?: string; // Custom folder path for schema data
+    // Custom types path
+    customTypesPath?: string; // Custom folder path for generated TS types
 }
 
 export interface GitStatus {
@@ -20,6 +22,36 @@ export interface GitStatus {
     remoteUrl?: string;
     currentBranch?: string;
     changesCount: number;
+}
+
+export interface SchemaField {
+    field: string;
+    type: string;
+    isPrimaryKey: boolean;
+    isForeignKey: boolean;
+    foreignKeyTable?: string;
+    isNullable: boolean;
+    special?: string[];
+}
+
+export interface SchemaCollection {
+    collection: string;
+    fields: SchemaField[];
+    isJunction: boolean;
+}
+
+export interface SchemaRelation {
+    collection: string;
+    field: string;
+    relatedCollection: string;
+    relatedField?: string;
+    type: 'M2O' | 'O2M' | 'M2M';
+    junctionField?: string;
+}
+
+export interface SchemaData {
+    collections: SchemaCollection[];
+    relations: SchemaRelation[];
 }
 
 export interface IpcRendererApi {
@@ -45,6 +77,13 @@ export interface IpcRendererApi {
 
     // Folder Selection
     selectSchemaFolder: () => Promise<string | null>;
+    selectTypesFolder: () => Promise<string | null>;
+
+    // Schema
+    getSchema: (id: string) => Promise<SchemaData>;
+
+    // TypeScript Types
+    pullTypes: (id: string) => Promise<{ success: boolean; output: string }>;
 }
 
 declare global {

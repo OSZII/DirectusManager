@@ -4,8 +4,9 @@ import InstanceList from './components/InstanceList.vue'
 import AddInstanceForm from './components/AddInstanceForm.vue'
 import PushInstanceForm from './components/PushInstanceForm.vue'
 import GitRemoteForm from './components/GitRemoteForm.vue'
+import SchemaViewer from './components/SchemaViewer.vue'
 import { Instance } from './vite-env'
-import { Plus, Database, Github } from 'lucide-vue-next'
+import { Plus, Database, Github, X } from 'lucide-vue-next'
 import AppButton from './components/AppButton.vue'
 
 const instances = ref<Instance[]>([])
@@ -18,6 +19,10 @@ const pushingId = ref<string | null>(null)
 // Git Remote Modal
 const showGitRemoteModal = ref(false)
 const gitRemoteTargetInstance = ref<Instance | null>(null)
+
+// Schema Viewer
+const showSchemaViewer = ref(false)
+const schemaViewerInstance = ref<Instance | null>(null)
 
 // Reference to InstanceList for refreshing git statuses
 const instanceListRef = ref<InstanceType<typeof InstanceList> | null>(null)
@@ -159,6 +164,25 @@ async function handleGitPull(instance: Instance, callback: (success: boolean) =>
   }
 }
 
+function handleViewSchema(instance: Instance) {
+  schemaViewerInstance.value = instance
+  showSchemaViewer.value = true
+}
+
+async function handlePullTypes(instance: Instance, callback: (success: boolean) => void) {
+  try {
+    const result = await window.ipcRenderer.pullTypes(instance.id);
+    if (result.success) {
+      alert(`✅ TypeScript types generated for ${instance.name}!\n\n${result.output}`);
+    }
+    callback(true);
+  } catch (err: any) {
+    alert(`❌ Failed to pull types for ${instance.name}\n\n${err.message}`);
+    console.error('[pull-types] error', err.message);
+    callback(false);
+  }
+}
+
 async function handleGitPush(instance: Instance, callback: (success: boolean) => void) {
   try {
     const result = await window.ipcRenderer.gitPush(instance.id);
@@ -234,6 +258,8 @@ async function handleGitPush(instance: Instance, callback: (success: boolean) =>
           @git-connect-remote="handleGitConnectRemote"
           @git-pull="handleGitPull"
           @git-push="handleGitPush"
+          @view-schema="handleViewSchema"
+          @pull-types="handlePullTypes"
         />
       </div>
     </main>
@@ -269,5 +295,30 @@ async function handleGitPush(instance: Instance, callback: (success: boolean) =>
       @close="showGitRemoteModal = false"
       @save="handleGitRemoteSave"
     />
+
+    <!-- Schema Viewer Full-Screen Overlay -->
+    <Teleport to="body">
+      <div v-if="showSchemaViewer && schemaViewerInstance" class="fixed inset-0 z-50 flex flex-col bg-base-300">
+        <!-- Header Bar -->
+        <div class="flex items-center justify-between px-6 py-3 bg-base-100/90 backdrop-blur-lg border-b border-base-content/10 shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+              <Database class="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h2 class="font-bold text-lg">{{ schemaViewerInstance.name }}</h2>
+              <p class="text-xs text-base-content/50">Schema Visualization</p>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm btn-square" @click="showSchemaViewer = false">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <!-- Graph -->
+        <div class="flex-1 overflow-hidden">
+          <SchemaViewer :instance="schemaViewerInstance" />
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
