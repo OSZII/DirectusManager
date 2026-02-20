@@ -31,6 +31,9 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   gitSetRemote: (id, remoteUrl, token) => electron.ipcRenderer.invoke("git-set-remote", id, remoteUrl, token),
   gitPull: (id) => electron.ipcRenderer.invoke("git-pull", id),
   gitPush: (id, commitMessage) => electron.ipcRenderer.invoke("git-push", id, commitMessage),
+  gitLog: (id) => electron.ipcRenderer.invoke("git-log", id),
+  gitFileChanges: (id, commitHash) => electron.ipcRenderer.invoke("git-file-changes", id, commitHash),
+  gitFileDiff: (id, filePath, commitHash) => electron.ipcRenderer.invoke("git-file-diff", id, filePath, commitHash),
   // Folder Selection API
   selectSchemaFolder: () => electron.ipcRenderer.invoke("select-schema-folder"),
   selectTypesFolder: () => electron.ipcRenderer.invoke("select-types-folder"),

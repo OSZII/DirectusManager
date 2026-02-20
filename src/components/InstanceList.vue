@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { Instance, GitStatus } from '../vite-env'
-import { Globe, MoreVertical, Edit, FolderOpen, Trash2, GitBranch, Link, Workflow, FileCode, Compass } from 'lucide-vue-next'
+import { Globe, MoreVertical, Edit, FolderOpen, Trash2, GitBranch, Link, Workflow, FileCode, Compass, History } from 'lucide-vue-next'
 import AppButton from './AppButton.vue'
 import PushButton from './PushButton.vue'
 import PullButton from './PullButton.vue'
@@ -24,6 +24,7 @@ const emit = defineEmits<{
   (e: 'view-schema', instance: Instance): void
   (e: 'pull-types', instance: Instance, callback: (success: boolean) => void): void
   (e: 'api-explorer', instance: Instance): void
+  (e: 'view-versions', instance: Instance): void
 }>()
 
 const pullingId = ref<string | null>(null)
@@ -207,6 +208,16 @@ defineExpose({ fetchGitStatuses })
                     :loading="gitPushingId === instance.id"
                     @click="handleGitPush(instance)"
                   />
+                  <!-- Schema versions button -->
+                  <button
+                    v-if="gitStatuses[instance.id]?.schemaVersions"
+                    class="btn btn-ghost btn-sm gap-1 px-2 text-base-content/60 hover:text-base-content"
+                    :title="`${gitStatuses[instance.id].schemaVersions} schema version${gitStatuses[instance.id].schemaVersions === 1 ? '' : 's'}`"
+                    @click="emit('view-versions', instance)"
+                  >
+                    <History class="h-3.5 w-3.5" />
+                    <span class="text-xs tabular-nums">{{ gitStatuses[instance.id].schemaVersions }}</span>
+                  </button>
                   <!-- Show changes count badge if there are changes -->
                   <span
                     v-if="gitStatuses[instance.id]?.changesCount > 0"

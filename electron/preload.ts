@@ -34,6 +34,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   gitSetRemote: (id: string, remoteUrl: string, token: string) => ipcRenderer.invoke('git-set-remote', id, remoteUrl, token),
   gitPull: (id: string) => ipcRenderer.invoke('git-pull', id),
   gitPush: (id: string, commitMessage?: string) => ipcRenderer.invoke('git-push', id, commitMessage),
+  gitLog: (id: string) => ipcRenderer.invoke('git-log', id),
+  gitFileChanges: (id: string, commitHash?: string) => ipcRenderer.invoke('git-file-changes', id, commitHash),
+  gitFileDiff: (id: string, filePath: string, commitHash?: string) => ipcRenderer.invoke('git-file-diff', id, filePath, commitHash),
 
   // Folder Selection API
   selectSchemaFolder: () => ipcRenderer.invoke('select-schema-folder'),

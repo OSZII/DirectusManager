@@ -32,6 +32,21 @@ export interface GitStatus {
     remoteUrl?: string;
     currentBranch?: string;
     changesCount: number;
+    schemaVersions?: number;
+}
+
+export interface GitLogEntry {
+    hash: string;
+    abbreviatedHash: string;
+    message: string;
+    authorName: string;
+    date: string;
+}
+
+export interface GitFileChange {
+    path: string;
+    status: 'added' | 'modified' | 'deleted' | 'renamed' | 'copied';
+    from?: string;
 }
 
 export interface SchemaField {
@@ -119,6 +134,9 @@ export interface IpcRendererApi {
     gitSetRemote: (id: string, remoteUrl: string, token: string) => Promise<{ success: boolean }>;
     gitPull: (id: string) => Promise<{ success: boolean; output: string }>;
     gitPush: (id: string, commitMessage?: string) => Promise<{ success: boolean; output: string }>;
+    gitLog: (id: string) => Promise<GitLogEntry[]>;
+    gitFileChanges: (id: string, commitHash?: string) => Promise<GitFileChange[]>;
+    gitFileDiff: (id: string, filePath: string, commitHash?: string) => Promise<string>;
 
     // Folder Selection
     selectSchemaFolder: () => Promise<string | null>;

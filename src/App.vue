@@ -6,8 +6,9 @@ import PushInstanceForm from './components/PushInstanceForm.vue'
 import GitRemoteForm from './components/GitRemoteForm.vue'
 import SchemaViewer from './components/SchemaViewer.vue'
 import ApiExplorer from './components/ApiExplorer.vue'
+import GitVersionView from './components/GitVersionView.vue'
 import { Instance } from './vite-env'
-import { Plus, Database, Github, X, Compass } from 'lucide-vue-next'
+import { Plus, Database, Github, X, Compass, GitBranch } from 'lucide-vue-next'
 import AppButton from './components/AppButton.vue'
 
 const appVersion = __APP_VERSION__
@@ -30,6 +31,10 @@ const schemaViewerInstance = ref<Instance | null>(null)
 // API Explorer
 const showApiExplorer = ref(false)
 const apiExplorerInstance = ref<Instance | null>(null)
+
+// Version View
+const showVersionView = ref(false)
+const versionViewInstance = ref<Instance | null>(null)
 
 // Reference to InstanceList for refreshing git statuses
 const instanceListRef = ref<InstanceType<typeof InstanceList> | null>(null)
@@ -181,6 +186,11 @@ function handleApiExplorer(instance: Instance) {
   showApiExplorer.value = true
 }
 
+function handleViewVersions(instance: Instance) {
+  versionViewInstance.value = instance
+  showVersionView.value = true
+}
+
 async function handlePullTypes(instance: Instance, callback: (success: boolean) => void) {
   try {
     const result = await window.ipcRenderer.pullTypes(instance.id);
@@ -273,6 +283,7 @@ async function handleGitPush(instance: Instance, callback: (success: boolean) =>
           @view-schema="handleViewSchema"
           @pull-types="handlePullTypes"
           @api-explorer="handleApiExplorer"
+          @view-versions="handleViewVersions"
         />
       </div>
     </main>
@@ -355,6 +366,31 @@ async function handleGitPush(instance: Instance, callback: (success: boolean) =>
         <!-- Content -->
         <div class="flex-1 overflow-hidden">
           <ApiExplorer :instance="apiExplorerInstance" />
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Version History Full-Screen Overlay -->
+    <Teleport to="body">
+      <div v-if="showVersionView && versionViewInstance" class="fixed inset-0 z-50 flex flex-col bg-base-300">
+        <!-- Header Bar -->
+        <div class="flex items-center justify-between px-6 py-3 bg-base-100/90 backdrop-blur-lg border-b border-base-content/10 shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+              <GitBranch class="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h2 class="font-bold text-lg">{{ versionViewInstance.name }}</h2>
+              <p class="text-xs text-base-content/50">Version History</p>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm btn-square" @click="showVersionView = false">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <!-- Content -->
+        <div class="flex-1 overflow-hidden">
+          <GitVersionView :instance="versionViewInstance" />
         </div>
       </div>
     </Teleport>

@@ -134,6 +134,15 @@ function registerIpcHandlers() {
 };`;
     fs.writeFileSync(path.join(instanceDir, 'directus-sync.config.js'), configContent);
 
+    // Ensure .gitignore includes directus-sync.config.js
+    const gitignorePath = path.join(instanceDir, '.gitignore');
+    if (fs.existsSync(gitignorePath)) {
+      const existing = fs.readFileSync(gitignorePath, 'utf-8');
+      if (!existing.includes('directus-sync.config.js')) {
+        fs.appendFileSync(gitignorePath, '\ndirectus-sync.config.js\n');
+      }
+    }
+
     // Execute pull command
     const { exec } = await import('child_process');
     return new Promise((resolve, reject) => {
@@ -605,12 +614,28 @@ function registerIpcHandlers() {
       const remotes = await git.getRemotes(true);
       const origin = remotes.find(r => r.name === 'origin');
 
-      // Get status for changes count
+      // Get status for changes count (only within instance directory)
       const status = await git.status();
-      const changesCount = status.files.length;
+      const relativePath = path.relative(gitRoot, instanceDir);
+      const changesCount = relativePath
+        ? status.files.filter(f => f.path.startsWith(relativePath + '/')).length
+        : status.files.length;
 
       // Get current branch
       const branchSummary = await git.branch();
+
+      // Count commits that touched files within the instance directory
+      let schemaVersions = 0;
+      try {
+        const logOptions: string[] = ['--oneline'];
+        if (relativePath) {
+          logOptions.push('--', relativePath);
+        }
+        const log = await git.raw(['log', ...logOptions]);
+        schemaVersions = log.trim() ? log.trim().split('\n').length : 0;
+      } catch {
+        // No commits yet
+      }
 
       return {
         initialized: true,
@@ -618,6 +643,7 @@ function registerIpcHandlers() {
         remoteUrl: origin?.refs?.fetch || instance.gitRemoteUrl || '',
         currentBranch: branchSummary.current || 'main',
         changesCount,
+        schemaVersions,
         gitRoot: gitRoot !== instanceDir ? gitRoot : undefined // Include if git root is a parent
       };
     } catch (e) {
@@ -660,7 +686,7 @@ function registerIpcHandlers() {
       // No commits yet, create initial commit
       const gitignorePath = path.join(instanceDir, '.gitignore');
       if (!fs.existsSync(gitignorePath)) {
-        fs.writeFileSync(gitignorePath, 'node_modules/\n.DS_Store\n');
+        fs.writeFileSync(gitignorePath, 'node_modules/\n.DS_Store\ndirectus-sync.config.js\n');
       }
       await git.add('.gitignore');
       await git.commit('Initial commit');
@@ -731,13 +757,171 @@ function registerIpcHandlers() {
     }
   });
 
-  // Git push (stage all, commit, push)
+  // Get git commit log for an instance
+  ipcMain.handle('git-log', async (_event, instanceId: string) => {
+    const instances = loadConfig();
+    const instance = instances.find((i: any) => i.id === instanceId);
+    if (!instance) throw new Error('Instance not found');
+
+    const instanceDir = getInstanceDir(instance);
+    if (!fs.existsSync(instanceDir)) return [];
+
+    const gitRoot = findGitRoot(instanceDir);
+    if (!gitRoot) return [];
+
+    const git = simpleGit(gitRoot);
+    const relativePath = path.relative(gitRoot, instanceDir);
+
+    try {
+      const logArgs = ['log', '--pretty=format:%H%n%h%n%s%n%an%n%aI', '-50'];
+      if (relativePath) {
+        logArgs.push('--', relativePath);
+      }
+      const raw = await git.raw(logArgs);
+      if (!raw.trim()) return [];
+
+      const lines = raw.trim().split('\n');
+      const entries = [];
+      for (let i = 0; i + 4 < lines.length; i += 5) {
+        entries.push({
+          hash: lines[i],
+          abbreviatedHash: lines[i + 1],
+          message: lines[i + 2],
+          authorName: lines[i + 3],
+          date: lines[i + 4],
+        });
+      }
+      return entries;
+    } catch {
+      return [];
+    }
+  });
+
+  // Get changed files for uncommitted changes or a specific commit
+  ipcMain.handle('git-file-changes', async (_event, instanceId: string, commitHash?: string) => {
+    const instances = loadConfig();
+    const instance = instances.find((i: any) => i.id === instanceId);
+    if (!instance) throw new Error('Instance not found');
+
+    const instanceDir = getInstanceDir(instance);
+    if (!fs.existsSync(instanceDir)) return [];
+
+    const gitRoot = findGitRoot(instanceDir);
+    if (!gitRoot) return [];
+
+    const git = simpleGit(gitRoot);
+    const relativePath = path.relative(gitRoot, instanceDir);
+
+    try {
+      if (!commitHash) {
+        // Uncommitted changes
+        const status = await git.status();
+        const files = relativePath
+          ? status.files.filter(f => f.path.startsWith(relativePath + '/'))
+          : status.files;
+
+        return files.map(f => {
+          let fileStatus: string;
+          if (f.index === '?' || f.working_dir === '?') fileStatus = 'added';
+          else if (f.index === 'D' || f.working_dir === 'D') fileStatus = 'deleted';
+          else if (f.index === 'R') fileStatus = 'renamed';
+          else fileStatus = 'modified';
+
+          const displayPath = relativePath ? f.path.replace(relativePath + '/', '') : f.path;
+          return { path: displayPath, status: fileStatus };
+        });
+      } else {
+        // Changes in a specific commit
+        const raw = await git.raw(['diff-tree', '--no-commit-id', '-r', '--name-status', commitHash]);
+        if (!raw.trim()) return [];
+
+        return raw.trim().split('\n')
+          .map(line => {
+            const [statusCode, ...pathParts] = line.split('\t');
+            const filePath = pathParts[pathParts.length - 1] || '';
+
+            // Scope to instance directory
+            if (relativePath && !filePath.startsWith(relativePath + '/')) return null;
+
+            const displayPath = relativePath ? filePath.replace(relativePath + '/', '') : filePath;
+
+            let fileStatus: string;
+            if (statusCode.startsWith('A')) fileStatus = 'added';
+            else if (statusCode.startsWith('D')) fileStatus = 'deleted';
+            else if (statusCode.startsWith('R')) fileStatus = 'renamed';
+            else if (statusCode.startsWith('C')) fileStatus = 'copied';
+            else fileStatus = 'modified';
+
+            return {
+              path: displayPath,
+              status: fileStatus,
+              from: statusCode.startsWith('R') ? (relativePath ? pathParts[0].replace(relativePath + '/', '') : pathParts[0]) : undefined,
+            };
+          })
+          .filter(Boolean);
+      }
+    } catch {
+      return [];
+    }
+  });
+
+  // Get diff content for a specific file
+  ipcMain.handle('git-file-diff', async (_event, instanceId: string, filePath: string, commitHash?: string) => {
+    const instances = loadConfig();
+    const instance = instances.find((i: any) => i.id === instanceId);
+    if (!instance) throw new Error('Instance not found');
+
+    const instanceDir = getInstanceDir(instance);
+    if (!fs.existsSync(instanceDir)) return '';
+
+    const gitRoot = findGitRoot(instanceDir);
+    if (!gitRoot) return '';
+
+    const git = simpleGit(gitRoot);
+    const relativePath = path.relative(gitRoot, instanceDir);
+    const fullFilePath = relativePath ? `${relativePath}/${filePath}` : filePath;
+
+    try {
+      if (!commitHash) {
+        // Uncommitted changes: try staged diff first, then unstaged
+        let diff = await git.diff(['--cached', '--', fullFilePath]);
+        if (!diff.trim()) {
+          diff = await git.diff(['--', fullFilePath]);
+        }
+        if (!diff.trim()) {
+          // Untracked file — show full content
+          const absPath = path.join(gitRoot, fullFilePath);
+          if (fs.existsSync(absPath)) {
+            const content = fs.readFileSync(absPath, 'utf-8');
+            return content
+              .split('\n')
+              .map(line => `+ ${line}`)
+              .join('\n');
+          }
+        }
+        return diff;
+      } else {
+        // Diff for a specific commit
+        const diff = await git.raw(['show', '--format=', commitHash, '--', fullFilePath]);
+        return diff;
+      }
+    } catch {
+      return '';
+    }
+  });
+
+  // Git push (stage only instance directory changes, commit, push)
   ipcMain.handle('git-push', async (_event, instanceId: string, commitMessage?: string) => {
     const instances = loadConfig();
     const instance = instances.find((i: any) => i.id === instanceId);
     if (!instance) throw new Error('Instance not found');
 
-    const git = getGitForInstance(instance);
+    const instanceDir = getInstanceDir(instance);
+    const gitRoot = findGitRoot(instanceDir);
+    if (!gitRoot) throw new Error('No git repository found');
+
+    const git = simpleGit(gitRoot);
+    const relativePath = path.relative(gitRoot, instanceDir);
 
     // Update remote URL with token for authentication
     const token = decryptGitToken(instance);
@@ -747,12 +931,18 @@ function registerIpcHandlers() {
     }
 
     try {
-      // Stage all changes
-      await git.add('.');
+      // Stage only changes within the instance directory
+      const addPath = relativePath || '.';
+      await git.add(addPath);
 
-      // Check if there are changes to commit
+      // Check if there are staged changes scoped to instance directory
       const status = await git.status();
-      if (status.files.length > 0) {
+      const instanceFiles = relativePath
+        ? status.files.filter(f => f.path.startsWith(relativePath + '/'))
+        : status.files;
+      const hasStagedChanges = instanceFiles.some(f => f.index !== ' ' && f.index !== '?');
+
+      if (hasStagedChanges) {
         const message = commitMessage || `Update: ${new Date().toISOString()}`;
         await git.commit(message);
       }
