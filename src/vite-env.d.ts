@@ -54,6 +54,40 @@ export interface SchemaData {
     relations: SchemaRelation[];
 }
 
+// API Explorer types
+export interface OpenApiParameter {
+    name: string;
+    in: 'query' | 'path' | 'header' | 'cookie';
+    description?: string;
+    required?: boolean;
+    schema?: {
+        type?: string;
+        default?: any;
+        enum?: any[];
+        format?: string;
+    };
+}
+
+export interface ParsedEndpoint {
+    path: string;
+    method: 'get' | 'post' | 'put' | 'patch' | 'delete';
+    summary: string;
+    description?: string;
+    tags: string[];
+    operationId?: string;
+    parameters: OpenApiParameter[];
+    requestBody?: any;
+}
+
+export interface ApiResponse {
+    status: number;
+    statusText: string;
+    headers: Record<string, string>;
+    body: any;
+    elapsed: number;
+    url: string;
+}
+
 export interface IpcRendererApi {
     on: (channel: string, listener: (event: any, ...args: any[]) => void) => void;
     off: (channel: string, ...omit: any[]) => void;
@@ -85,6 +119,10 @@ export interface IpcRendererApi {
 
     // TypeScript Types
     pullTypes: (id: string) => Promise<{ success: boolean; output: string }>;
+
+    // API Explorer
+    fetchOpenApiSpec: (id: string) => Promise<any>;
+    apiRequest: (id: string, method: string, path: string, queryParams?: Record<string, string>, body?: any) => Promise<ApiResponse>;
 }
 
 declare global {

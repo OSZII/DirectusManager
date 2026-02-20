@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { Instance, GitStatus } from '../vite-env'
-import { Globe, MoreVertical, Edit, FolderOpen, Trash2, GitBranch, Link, Workflow, FileCode } from 'lucide-vue-next'
+import { Globe, MoreVertical, Edit, FolderOpen, Trash2, GitBranch, Link, Workflow, FileCode, Compass } from 'lucide-vue-next'
 import AppButton from './AppButton.vue'
 import PushButton from './PushButton.vue'
 import PullButton from './PullButton.vue'
@@ -23,6 +23,7 @@ const emit = defineEmits<{
   (e: 'git-push', instance: Instance, callback: (success: boolean) => void): void
   (e: 'view-schema', instance: Instance): void
   (e: 'pull-types', instance: Instance, callback: (success: boolean) => void): void
+  (e: 'api-explorer', instance: Instance): void
 }>()
 
 const pullingId = ref<string | null>(null)
@@ -245,6 +246,10 @@ defineExpose({ fetchGitStatuses })
             <AppButton variant="ghost" size="sm" @click="emit('view-schema', instance)">
               <template #icon><Workflow class="h-4 w-4" /></template>
               View Schema
+            </AppButton>
+            <AppButton variant="ghost" size="sm" @click="emit('api-explorer', instance)">
+              <template #icon><Compass class="h-4 w-4" /></template>
+              API Explorer
             </AppButton>
             <AppButton
               variant="ghost"

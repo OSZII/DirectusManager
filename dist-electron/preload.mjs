@@ -37,5 +37,8 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   // Schema API
   getSchema: (id) => electron.ipcRenderer.invoke("get-schema", id),
   // TypeScript Types API
-  pullTypes: (id) => electron.ipcRenderer.invoke("pull-types", id)
+  pullTypes: (id) => electron.ipcRenderer.invoke("pull-types", id),
+  // API Explorer
+  fetchOpenApiSpec: (id) => electron.ipcRenderer.invoke("fetch-openapi-spec", id),
+  apiRequest: (id, method, path, queryParams, body) => electron.ipcRenderer.invoke("api-request", id, method, path, queryParams, body)
 });

@@ -5573,6 +5573,71 @@ function registerIpcHandlers() {
       });
     });
   });
+  ipcMain.handle("fetch-openapi-spec", async (_event, instanceId) => {
+    const instances = loadConfig();
+    const instance = instances.find((i) => i.id === instanceId);
+    if (!instance) throw new Error("Instance not found");
+    let token = instance.token;
+    if (instance.encryptedToken && safeStorage.isEncryptionAvailable()) {
+      token = safeStorage.decryptString(Buffer.from(instance.encryptedToken, "base64"));
+    }
+    if (!token) throw new Error("No access token configured for this instance");
+    const url = instance.url.replace(/\/+$/, "");
+    const response = await fetch(`${url}/server/specs/oas`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch OpenAPI spec: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  });
+  ipcMain.handle("api-request", async (_event, instanceId, method, urlPath, queryParams, body) => {
+    const instances = loadConfig();
+    const instance = instances.find((i) => i.id === instanceId);
+    if (!instance) throw new Error("Instance not found");
+    let token = instance.token;
+    if (instance.encryptedToken && safeStorage.isEncryptionAvailable()) {
+      token = safeStorage.decryptString(Buffer.from(instance.encryptedToken, "base64"));
+    }
+    if (!token) throw new Error("No access token configured for this instance");
+    const baseUrl = instance.url.replace(/\/+$/, "");
+    const requestUrl = new URL(`${baseUrl}${urlPath}`);
+    if (queryParams) {
+      for (const [key, value] of Object.entries(queryParams)) {
+        if (value !== void 0 && value !== "") {
+          requestUrl.searchParams.set(key, value);
+        }
+      }
+    }
+    const startTime = Date.now();
+    const fetchOptions = {
+      method: method.toUpperCase(),
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
+    };
+    if (body !== void 0 && ["POST", "PUT", "PATCH"].includes(method.toUpperCase())) {
+      fetchOptions.body = typeof body === "string" ? body : JSON.stringify(body);
+    }
+    const response = await fetch(requestUrl.toString(), fetchOptions);
+    const elapsed = Date.now() - startTime;
+    const contentType = response.headers.get("content-type") || "";
+    let responseBody;
+    if (contentType.includes("application/json")) {
+      responseBody = await response.json();
+    } else {
+      responseBody = await response.text();
+    }
+    return {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: responseBody,
+      elapsed,
+      url: requestUrl.toString()
+    };
+  });
   ipcMain.handle("select-schema-folder", async () => {
     const result = await dialog.showOpenDialog(win, {
       properties: ["openDirectory", "createDirectory"]

@@ -44,4 +44,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 
   // TypeScript Types API
   pullTypes: (id: string) => ipcRenderer.invoke('pull-types', id),
+
+  // API Explorer
+  fetchOpenApiSpec: (id: string) => ipcRenderer.invoke('fetch-openapi-spec', id),
+  apiRequest: (id: string, method: string, path: string, queryParams?: Record<string, string>, body?: any) =>
+    ipcRenderer.invoke('api-request', id, method, path, queryParams, body),
 })
