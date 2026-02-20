@@ -10,7 +10,7 @@ The software contains a footer element providing credit to the original author a
 
 **The Footer Content:**
 
-> `Directus Manager v1.1.0 • by Stefan Ostojic [Link] [GitHub Icon/Link]`
+> `Directus Manager v1.2.0 • by Stefan Ostojic [Link] [GitHub Icon/Link]`
 
 **Requirements:**
 

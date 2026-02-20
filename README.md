@@ -14,7 +14,8 @@ Directus Manager is a powerful desktop client built with **Electron + Vue** desi
 * **Instance Management:** Quickly switch between different Directus environments.
 * **Interactive Schema Viewer:** Visualize your database schema with an interactive graph showing collections and their relationships.
 * **TypeScript Type Generation:** Pull TypeScript types directly from your Directus instance.
-* **Git Integration:** Version control your schemas with built-in Git support.
+* **Git Integration:** Version control your schemas with built-in Git support — view commit history, diffs, and manage remotes.
+* **API Explorer:** Browse and test Directus API endpoints with jq-powered JSON filtering.
 * **Developer Friendly:** Open for modifications and community improvements.
 
 ---
@@ -45,6 +46,39 @@ Explore your database structure with a visual, interactive schema graph. Collect
 - View fields, types, and relationships at a glance
 - Zoom, pan, and rearrange nodes to explore complex schemas
 - Color-coded edges distinguish different relationship types
+
+---
+
+### Git Version Control
+
+Track and manage schema changes with built-in Git integration. View commit history, see uncommitted changes, and inspect diffs — all without leaving the app.
+
+![Git Version Control](git-version-control-1.png)
+
+![Git Version Control - History & Diff](git-version-control2.png)
+
+- View full commit history with authors and timestamps
+- See uncommitted and modified files at a glance
+- Inspect line-by-line diffs for any changed file
+- Pull and push to remote repositories with embedded credentials
+
+---
+
+### API Explorer with jq Search
+
+Browse and test your Directus API endpoints directly from the app. Send requests, view responses, and filter JSON data using jq expressions.
+
+![API Explorer](api-explorer.png)
+
+![API Explorer - jq Search](api-explorer-jq-search.png)
+
+- Browse all available endpoints grouped by collection
+- Send GET, POST, PATCH, and DELETE requests
+- Set relational depth for nested data retrieval
+- Filter and extract response data using jq path expressions (e.g. `.data[].date_created`)
+- Copy response data to clipboard
+
+---
 
 ## 🛠️ Tech Stack
 
