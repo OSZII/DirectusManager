@@ -143,6 +143,17 @@ function registerIpcHandlers() {
         } else {
           // Check if output contains "Done!" to determine success
           const isSuccess = stdout.includes('Done!');
+
+          // Copy schema output to additional paths
+          if (isSuccess && instance.additionalSchemaPaths?.length) {
+            const entries = fs.readdirSync(instanceDir, { withFileTypes: true });
+            for (const entry of entries) {
+              if (entry.isDirectory() && entry.name !== '.git' && entry.name !== 'node_modules') {
+                copyDirToAdditionalPaths(instanceDir, instance.additionalSchemaPaths, entry.name);
+              }
+            }
+          }
+
           resolve({ success: isSuccess, output: stdout });
         }
       });
@@ -336,6 +347,36 @@ function registerIpcHandlers() {
     return getInstanceDir(instance);
   }
 
+  // Copy a subdirectory from sourceDir to each additional path (best-effort)
+  function copyDirToAdditionalPaths(sourceDir: string, additionalPaths: string[], subDir: string) {
+    const src = path.join(sourceDir, subDir);
+    if (!fs.existsSync(src)) return;
+    for (const destBase of additionalPaths) {
+      if (!destBase) continue;
+      try {
+        const dest = path.join(destBase, subDir);
+        if (!fs.existsSync(destBase)) fs.mkdirSync(destBase, { recursive: true });
+        fs.cpSync(src, dest, { recursive: true, force: true });
+      } catch (err) {
+        console.error(`Failed to copy ${subDir} to ${destBase}:`, err);
+      }
+    }
+  }
+
+  // Copy a single file to each additional path (best-effort)
+  function copyFileToAdditionalPaths(sourceFile: string, additionalPaths: string[], fileName: string) {
+    if (!fs.existsSync(sourceFile)) return;
+    for (const destBase of additionalPaths) {
+      if (!destBase) continue;
+      try {
+        if (!fs.existsSync(destBase)) fs.mkdirSync(destBase, { recursive: true });
+        fs.copyFileSync(sourceFile, path.join(destBase, fileName));
+      } catch (err) {
+        console.error(`Failed to copy ${fileName} to ${destBase}:`, err);
+      }
+    }
+  }
+
   ipcMain.handle('pull-types', async (_event, instanceId: string) => {
     const instances = loadConfig();
     const instance = instances.find((i: any) => i.id === instanceId);
@@ -379,6 +420,10 @@ function registerIpcHandlers() {
         if (error) {
           reject(new Error(stderr || error.message));
         } else {
+          // Copy types file to additional paths
+          if (instance.additionalTypesPaths?.length) {
+            copyFileToAdditionalPaths(outputFile, instance.additionalTypesPaths, 'directus-types.d.ts');
+          }
           resolve({ success: true, output: `Types generated at ${outputFile}` });
         }
       });

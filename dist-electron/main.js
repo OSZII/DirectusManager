@@ -5392,6 +5392,14 @@ function registerIpcHandlers() {
           reject(new Error(stderr || error.message));
         } else {
           const isSuccess = stdout.includes("Done!");
+          if (isSuccess && instance.additionalSchemaPaths?.length) {
+            const entries = fs.readdirSync(instanceDir, { withFileTypes: true });
+            for (const entry of entries) {
+              if (entry.isDirectory() && entry.name !== ".git" && entry.name !== "node_modules") {
+                copyDirToAdditionalPaths(instanceDir, instance.additionalSchemaPaths, entry.name);
+              }
+            }
+          }
           resolve({ success: isSuccess, output: stdout });
         }
       });
@@ -5536,6 +5544,32 @@ function registerIpcHandlers() {
     }
     return getInstanceDir(instance);
   }
+  function copyDirToAdditionalPaths(sourceDir, additionalPaths, subDir) {
+    const src2 = path.join(sourceDir, subDir);
+    if (!fs.existsSync(src2)) return;
+    for (const destBase of additionalPaths) {
+      if (!destBase) continue;
+      try {
+        const dest = path.join(destBase, subDir);
+        if (!fs.existsSync(destBase)) fs.mkdirSync(destBase, { recursive: true });
+        fs.cpSync(src2, dest, { recursive: true, force: true });
+      } catch (err) {
+        console.error(`Failed to copy ${subDir} to ${destBase}:`, err);
+      }
+    }
+  }
+  function copyFileToAdditionalPaths(sourceFile, additionalPaths, fileName) {
+    if (!fs.existsSync(sourceFile)) return;
+    for (const destBase of additionalPaths) {
+      if (!destBase) continue;
+      try {
+        if (!fs.existsSync(destBase)) fs.mkdirSync(destBase, { recursive: true });
+        fs.copyFileSync(sourceFile, path.join(destBase, fileName));
+      } catch (err) {
+        console.error(`Failed to copy ${fileName} to ${destBase}:`, err);
+      }
+    }
+  }
   ipcMain.handle("pull-types", async (_event, instanceId) => {
     const instances = loadConfig();
     const instance = instances.find((i) => i.id === instanceId);
@@ -5568,6 +5602,9 @@ function registerIpcHandlers() {
         if (error) {
           reject(new Error(stderr || error.message));
         } else {
+          if (instance.additionalTypesPaths?.length) {
+            copyFileToAdditionalPaths(outputFile, instance.additionalTypesPaths, "directus-types.d.ts");
+          }
           resolve({ success: true, output: `Types generated at ${outputFile}` });
         }
       });

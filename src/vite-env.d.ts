@@ -1,5 +1,13 @@
 /// <reference types="vite/client" />
 
+declare module '@michaelhomer/jqjs' {
+    function jq(filter: string, data: any): Iterable<any>
+    namespace jq {
+        function compile(filter: string): (data: any) => Iterable<any>
+    }
+    export default jq
+}
+
 export interface Instance {
     id: string;
     name: string;
@@ -12,8 +20,10 @@ export interface Instance {
     gitToken?: string; // Fallback if encryption unavailable
     // Custom schema path
     customSchemaPath?: string; // Custom folder path for schema data
+    additionalSchemaPaths?: string[]; // Extra folders to copy schema output to
     // Custom types path
     customTypesPath?: string; // Custom folder path for generated TS types
+    additionalTypesPaths?: string[]; // Extra folders to copy types output to
 }
 
 export interface GitStatus {

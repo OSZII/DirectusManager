@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { ApiResponse } from '../vite-env'
 import { Copy, Check, Filter, AlertCircle, Loader2 } from 'lucide-vue-next'
 import JsonTree from './JsonTree.vue'
+import jq from '@michaelhomer/jqjs'
 
 const props = defineProps<{
   response: ApiResponse | null
@@ -10,28 +11,13 @@ const props = defineProps<{
   error: string | null
 }>()
 
-const jqFilter = ref('.')
-const jqError = ref('')
+const filterInput = ref('')
+const filterError = ref('')
 const filteredData = ref<any>(null)
 const isFiltering = ref(false)
 const copied = ref(false)
-const jqAvailable = ref(true)
-let jqInstance: any = null
 
-// Lazy-load and initialize jq-web
-async function getJq() {
-  if (jqInstance) return jqInstance
-  try {
-    const jqFactory = await import('jq-web')
-    // jq-web exports a promise that resolves to the jq object
-    jqInstance = await (jqFactory.default || jqFactory)
-    return jqInstance
-  } catch (e) {
-    console.error('Failed to load jq-web:', e)
-    jqAvailable.value = false
-    return null
-  }
-}
+const isJqMode = computed(() => filterInput.value.trimStart().startsWith('.'))
 
 const statusColor = computed(() => {
   if (!props.response) return ''
@@ -59,32 +45,88 @@ const displayData = computed(() => {
 // Reset filter when response changes
 watch(() => props.response, () => {
   filteredData.value = null
-  jqFilter.value = '.'
-  jqError.value = ''
+  filterInput.value = ''
+  filterError.value = ''
 })
 
-async function applyFilter() {
-  if (!props.response || jqFilter.value.trim() === '.' || !jqFilter.value.trim()) {
+// --- Text search: find all keys/values matching the query ---
+function textSearch(data: any, query: string): any {
+  const q = query.toLowerCase()
+
+  function matches(value: any): boolean {
+    if (value === null || value === undefined) return false
+    return String(value).toLowerCase().includes(q)
+  }
+
+  function search(obj: any): any {
+    if (obj === null || obj === undefined) return undefined
+    if (Array.isArray(obj)) {
+      const results = obj
+        .map(item => search(item))
+        .filter(item => item !== undefined)
+      return results.length > 0 ? results : undefined
+    }
+    if (typeof obj === 'object') {
+      const result: Record<string, any> = {}
+      let hasMatch = false
+      for (const [key, value] of Object.entries(obj)) {
+        if (matches(key)) {
+          result[key] = value
+          hasMatch = true
+        } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+          if (matches(value)) {
+            result[key] = value
+            hasMatch = true
+          }
+        } else {
+          const nested = search(value)
+          if (nested !== undefined) {
+            result[key] = nested
+            hasMatch = true
+          }
+        }
+      }
+      return hasMatch ? result : undefined
+    }
+    // Primitive
+    return matches(obj) ? obj : undefined
+  }
+
+  const result = search(data)
+  return result !== undefined ? result : null
+}
+
+function applyFilter() {
+  const raw = filterInput.value.trim()
+  if (!props.response || !raw) {
     filteredData.value = null
-    jqError.value = ''
+    filterError.value = ''
     return
   }
 
   isFiltering.value = true
-  jqError.value = ''
+  filterError.value = ''
 
   try {
-    const jq = await getJq()
-    if (!jq) {
-      jqError.value = 'jq-web is not available'
-      return
+    if (isJqMode.value) {
+      if (raw === '.') {
+        filteredData.value = null
+      } else {
+        // Use jqjs: compile the filter and collect all output values
+        const results = [...jq(raw, props.response.body)]
+        filteredData.value = results.length === 1 ? results[0] : results
+      }
+    } else {
+      const result = textSearch(props.response.body, raw)
+      if (result === null) {
+        filterError.value = `No matches for "${raw}"`
+        filteredData.value = null
+      } else {
+        filteredData.value = result
+      }
     }
-
-    // jq-web: jq.json(data, filter) takes JS object and returns JS object
-    const result = jq.json(props.response.body, jqFilter.value)
-    filteredData.value = result
   } catch (e: any) {
-    jqError.value = e.message || 'Invalid jq filter'
+    filterError.value = e.message || 'Invalid jq filter'
     filteredData.value = null
   } finally {
     isFiltering.value = false
@@ -139,28 +181,29 @@ function handleFilterKeydown(e: KeyboardEvent) {
         </button>
       </div>
 
-      <!-- jq filter -->
+      <!-- Filter bar -->
       <div class="flex items-center gap-2 px-4 py-2 border-b border-base-content/10 shrink-0">
-        <Filter class="h-4 w-4 text-base-content/40 shrink-0" />
+        <Filter v-if="isJqMode" class="h-4 w-4 text-base-content/40 shrink-0" title="jq path mode" />
+        <AlertCircle v-else-if="filterInput.trim()" class="h-4 w-4 text-info/60 shrink-0" title="Text search mode" />
+        <Filter v-else class="h-4 w-4 text-base-content/40 shrink-0" />
         <input
-          v-model="jqFilter"
+          v-model="filterInput"
           type="text"
-          placeholder="jq filter (e.g. .data[0] | keys)"
+          :placeholder="isJqMode ? 'jq path (e.g. .data[0].name)' : 'Search keys & values, or start with . for jq path'"
           class="input input-xs flex-1 bg-base-200 border-base-content/10 font-mono text-sm"
-          :disabled="!jqAvailable"
-          :title="!jqAvailable ? 'jq-web failed to load' : ''"
           @keydown="handleFilterKeydown"
         />
+        <span class="text-xs text-base-content/30 shrink-0">{{ isJqMode ? 'jq' : 'search' }}</span>
         <button
           class="btn btn-ghost btn-xs"
-          :disabled="isFiltering || !jqAvailable"
+          :disabled="isFiltering"
           @click="applyFilter"
         >
           <Loader2 v-if="isFiltering" class="h-3 w-3 animate-spin" />
           <span v-else>Apply</span>
         </button>
       </div>
-      <p v-if="jqError" class="text-xs text-error px-4 py-1 bg-error/5">{{ jqError }}</p>
+      <p v-if="filterError" class="text-xs text-error px-4 py-1 bg-error/5">{{ filterError }}</p>
 
       <!-- JSON body -->
       <div class="flex-1 overflow-auto p-4">
